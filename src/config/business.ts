@@ -9,7 +9,7 @@ export const business = {
     // TODO vor Go-Live: ladungsfähige Anschrift für Impressum ergänzen.
     street: "",
     city: "68309 Mannheim",
-    email: "clarencejohnson@hotmail.de",
+    email: "hallo@leanchicken.de",
     phone: "+49 179 1778957",
   },
   // Kleinunternehmer nach § 19 UStG: keine Umsatzsteuer ausweisen.
