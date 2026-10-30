@@ -20,7 +20,7 @@ export const business = {
     // Rechtliche Angaben (Impressum, Datenschutz)
     legalEmail: "info@johnson-services.de",
     legalPhone: "+49 162 1811123",
-    vatId: "DE45212565",
+    vatId: "DE452125652",
     taxOffice: "Finanzamt Mannheim-Neckarstadt",
   },
   websiteBy: { name: "rebelzai.com", url: "https://rebelzai.com" },
