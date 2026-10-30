@@ -1,0 +1,30 @@
+// Liefertage, Lieferfenster und Kapazität. Alle Uhrzeiten sind Ortszeit Europe/Berlin.
+
+export const schedule = {
+  timeZone: "Europe/Berlin",
+  // ISO-Wochentage: 1 = Montag … 7 = Sonntag
+  deliveryWeekdays: [1, 3, 4],
+  windows: [
+    { start: "11:30", end: "12:00" },
+    { start: "12:00", end: "12:30" },
+    { start: "12:30", end: "13:00" },
+    { start: "13:00", end: "13:30" },
+    { start: "13:30", end: "14:00" },
+  ],
+  // Produktionsgrenze pro Lieferfenster in Chicken Strips (Fritteusen-Kapazität).
+  maxStripsPerWindow: 100,
+  // Bestellschluss: so viele Minuten vor Beginn des Lieferfensters.
+  orderLeadMinutes: 60,
+  // Wie viele Kalendertage im Voraus bestellt werden kann.
+  daysAhead: 7,
+  // Unbezahlte Bestellungen halten Kapazität so lange. Stripe-Sessions laufen technisch mindestens
+  // 30 Minuten; abgelaufene Reservierungen werden deshalb vor jeder neuen Bestellung aktiv beendet.
+  pendingHoldMinutes: 15,
+} as const;
+
+// Lieferradius über Postleitzahl. FRANKLIN liegt in 68309; Adresse wird zusätzlich manuell geprüft.
+export const deliveryArea = {
+  label: "FRANKLIN, Mannheim",
+  postalCodes: ["68309"],
+  city: "Mannheim",
+} as const;

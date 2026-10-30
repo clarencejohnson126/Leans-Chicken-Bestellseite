@@ -1,0 +1,265 @@
+import "server-only";
+import { createClient } from "@supabase/supabase-js";
+import type {
+  CheckoutSession,
+  CreatePendingResult,
+  OrderStore,
+  OrderSummary,
+  PaymentLedger,
+  PaymentStatus,
+  PaymentUpdate,
+  PendingOrderInput,
+  SyncTarget,
+} from "@/server/ports";
+
+const syncColumn: Record<SyncTarget, string> = { sheet: "sheet_synced_at", notification: "notified_at" };
+
+// Supabase-Adapter für Bestellungen und Zahlungsstatus. Läuft nur auf dem Server mit dem
+// Secret Key; das Schema (Standard "leans") ist per RLS für anon/authenticated gesperrt.
+
+// Erlaubte Vorgänger je Zielstatus. Alles andere wird ignoriert (Events kommen in beliebiger Reihenfolge).
+const allowedFrom: Record<PaymentUpdate["status"], PaymentStatus[]> = {
+  processing: ["pending"],
+  // "expired" erlaubt: Zahlt jemand im Moment des Ablaufs, wird das Geld trotzdem verbucht.
+  paid: ["pending", "processing", "expired"],
+  failed: ["pending", "processing"],
+  expired: ["pending"],
+};
+
+type OrderRow = {
+  id: string;
+  order_number: string;
+  source: OrderSummary["source"];
+  payment_status: PaymentStatus;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  company: string;
+  street: string;
+  postal_code: string;
+  address_note: string;
+  customer_note: string;
+  slot_id: string;
+  delivery_date: string;
+  slot_start: string;
+  slot_end: string;
+  strips: number;
+  total_cents: number;
+  order_items?: { item_id: string; item_name_snapshot: string; quantity: number; unit_price_cents_snapshot: number }[];
+};
+
+const orderColumns =
+  "id, order_number, source, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
+
+function toSummary(row: OrderRow): OrderSummary {
+  return {
+    id: row.id,
+    orderNumber: row.order_number,
+    source: row.source,
+    paymentStatus: row.payment_status,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    customerEmail: row.customer_email,
+    company: row.company,
+    street: row.street,
+    postalCode: row.postal_code,
+    addressNote: row.address_note,
+    customerNote: row.customer_note,
+    slotId: row.slot_id,
+    deliveryDate: row.delivery_date,
+    slotStart: row.slot_start.slice(0, 5),
+    slotEnd: row.slot_end.slice(0, 5),
+    strips: row.strips,
+    totalCents: row.total_cents,
+    items: (row.order_items ?? []).map((i) => ({
+      itemId: i.item_id,
+      name: i.item_name_snapshot,
+      quantity: i.quantity,
+      lineTotalCents: i.quantity * i.unit_price_cents_snapshot,
+    })),
+  };
+}
+
+function fail(action: string, error: { message: string } | null): never {
+  throw new Error(`supabase ${action}: ${error?.message ?? "unbekannter Fehler"}`);
+}
+
+export function createSupabaseClient(url: string, secretKey: string, schema: string) {
+  return createClient(url, secretKey, {
+    db: { schema },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>): OrderStore & PaymentLedger {
+  async function addEvent(orderId: string, type: string, detail: Record<string, unknown> = {}) {
+    const { error } = await db.from("order_events").insert({ order_id: orderId, type, detail });
+    if (error) fail("order_events.insert", error);
+  }
+
+  return {
+    async reservedStrips(slotIds) {
+      const { data, error } = await db.rpc("reserved_strips", { p_slot_ids: slotIds });
+      if (error) fail("reserved_strips", error);
+      return Object.fromEntries(
+        (data as { slot_id: string; strips: number }[]).map((r) => [r.slot_id, Number(r.strips)]),
+      );
+    },
+
+    async createPendingOrder(input: PendingOrderInput): Promise<CreatePendingResult> {
+      const { data, error } = await db.rpc("create_pending_order", {
+        p_order: {
+          source: input.source,
+          customer_name: input.customer.name,
+          customer_phone: input.customer.phone,
+          company: input.customer.company,
+          street: input.customer.street,
+          postal_code: input.customer.postalCode,
+          address_note: input.customer.addressNote,
+          customer_note: input.note,
+          slot_id: input.slot.id,
+          delivery_date: input.slot.date,
+          slot_start: input.slot.start,
+          slot_end: input.slot.end,
+          strips: input.strips,
+          total_cents: input.totalCents,
+          expires_at: input.expiresAt.toISOString(),
+        },
+        p_items: input.lines.map((l) => ({
+          item_id: l.itemId,
+          kind: l.kind,
+          name: l.name,
+          unit_price_cents: l.unitPriceCents,
+          quantity: l.quantity,
+          strips: l.strips,
+          fries: l.fries,
+        })),
+        p_max_strips: input.maxStripsPerSlot,
+      });
+      if (error) fail("create_pending_order", error);
+      const row = (data as { id: string; order_number: string }[])[0];
+      if (!row) return { ok: false, reason: "capacity" };
+      return { ok: true, order: { ...input, id: row.id, orderNumber: row.order_number } };
+    },
+
+    async attachCheckout(orderId, checkout: CheckoutSession) {
+      const { error } = await db
+        .from("orders")
+        .update({ stripe_checkout_session_id: checkout.sessionId })
+        .eq("id", orderId);
+      if (error) fail("orders.attachCheckout", error);
+      await addEvent(orderId, "checkout_created", { session_id: checkout.sessionId });
+    },
+
+    async releaseOrder(orderId, reason) {
+      const { error } = await db
+        .from("orders")
+        .update({ payment_status: "released" })
+        .eq("id", orderId)
+        .eq("payment_status", "pending");
+      if (error) fail("orders.release", error);
+      await addEvent(orderId, "order_released", { reason });
+    },
+
+    async staleCheckouts(now) {
+      const { data, error } = await db
+        .from("orders")
+        .select("id, stripe_checkout_session_id")
+        .eq("payment_status", "pending")
+        .lt("expires_at", now.toISOString())
+        .not("stripe_checkout_session_id", "is", null)
+        .limit(20);
+      if (error) fail("orders.staleCheckouts", error);
+      return (data as { id: string; stripe_checkout_session_id: string }[]).map((r) => ({
+        orderId: r.id,
+        sessionId: r.stripe_checkout_session_id,
+      }));
+    },
+
+    async expireOrder(orderId, reason) {
+      const { error } = await db
+        .from("orders")
+        .update({ payment_status: "expired" })
+        .eq("id", orderId)
+        .eq("payment_status", "pending");
+      if (error) fail("orders.expire", error);
+      await addEvent(orderId, "order_expired", { reason });
+    },
+
+    async isEventProcessed(eventId) {
+      const { data, error } = await db.from("stripe_events").select("id").eq("id", eventId).maybeSingle();
+      if (error) fail("stripe_events.select", error);
+      return data !== null;
+    },
+
+    async markEventProcessed(eventId, type) {
+      const { error } = await db.from("stripe_events").upsert({ id: eventId, type }, { ignoreDuplicates: true });
+      if (error) fail("stripe_events.upsert", error);
+    },
+
+    async applyPayment(update) {
+      const patch: Record<string, unknown> = {
+        payment_status: update.status,
+        stripe_checkout_session_id: update.sessionId,
+      };
+      if (update.paymentIntentId) patch.stripe_payment_intent_id = update.paymentIntentId;
+      if (update.customerEmail) patch.customer_email = update.customerEmail;
+      if (update.status === "paid") patch.paid_at = new Date().toISOString();
+
+      const { data, error } = await db
+        .from("orders")
+        .update(patch)
+        .eq("id", update.orderId)
+        .in("payment_status", allowedFrom[update.status])
+        .select(orderColumns);
+      if (error) fail("orders.applyPayment", error);
+
+      const changedRow = (data as unknown as OrderRow[])[0];
+      if (changedRow) {
+        await addEvent(update.orderId, `payment_${update.status}`, {
+          stripe_event: update.eventType,
+          session_id: update.sessionId,
+        });
+        return { changed: true, order: toSummary(changedRow) };
+      }
+
+      const { data: current, error: readError } = await db
+        .from("orders")
+        .select(orderColumns)
+        .eq("id", update.orderId)
+        .maybeSingle();
+      if (readError) fail("orders.select", readError);
+      return { changed: false, order: current ? toSummary(current as unknown as OrderRow) : null };
+    },
+
+    async unsyncedOrders(target, limit) {
+      const { data, error } = await db
+        .from("orders")
+        .select(orderColumns)
+        .in("payment_status", ["paid", "processing"])
+        .is(syncColumn[target], null)
+        .order("created_at")
+        .limit(limit);
+      if (error) fail("orders.unsynced", error);
+      return (data as unknown as OrderRow[]).map(toSummary);
+    },
+
+    async markSynced(orderId, target) {
+      const { error } = await db
+        .from("orders")
+        .update({ [syncColumn[target]]: new Date().toISOString() })
+        .eq("id", orderId);
+      if (error) fail("orders.markSynced", error);
+    },
+
+    async findOrderBySession(sessionId) {
+      const { data, error } = await db
+        .from("orders")
+        .select(orderColumns)
+        .eq("stripe_checkout_session_id", sessionId)
+        .maybeSingle();
+      if (error) fail("orders.findBySession", error);
+      return data ? toSummary(data as unknown as OrderRow) : null;
+    },
+  };
+}
