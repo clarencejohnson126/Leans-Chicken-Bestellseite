@@ -117,7 +117,8 @@ export interface PaymentLedger {
   applyPayment(update: PaymentUpdate): Promise<{ changed: boolean; order: OrderSummary | null }>;
   findOrderBySession(sessionId: string): Promise<OrderSummary | null>;
   /** Bezahlte bzw. SEPA-eingereichte Bestellungen, die noch nicht ins Ziel (Sheet, Mail) übertragen wurden. */
-  unsyncedOrders(target: SyncTarget, limit: number): Promise<OrderSummary[]>;
+  /** `since`: nur Bestellungen, die danach angelegt wurden (z. B. damit Mails nicht Tage später nachkommen). */
+  unsyncedOrders(target: SyncTarget, limit: number, since?: Date): Promise<OrderSummary[]>;
   /**
    * Beansprucht die Übertragung atomar (setzt den Zeitstempel nur, wenn er noch leer ist). Laufen zwei
    * Webhooks gleichzeitig, bekommt nur einer true; so entsteht im Sheet nie eine doppelte Zeile.

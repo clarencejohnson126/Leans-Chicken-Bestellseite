@@ -17,6 +17,10 @@ const events: Record<SyncTarget, { ok: SyncLogEvent; failed: SyncLogEvent }> = {
   confirmation: { ok: "notification_success", failed: "notification_failed" },
 };
 
+// Mails holt der Retry nur für frische Bestellungen nach; eine Bestätigung Tage später verwirrt mehr,
+// als sie hilft. Das Sheet wird dagegen immer vollständig nachgetragen.
+const retryWindowHours: Partial<Record<SyncTarget, number>> = { notification: 6, confirmation: 6 };
+
 export function createAfterPayment(
   ledger: PaymentLedger,
   sinks: Partial<Record<SyncTarget, OrderSink>>,
@@ -49,7 +53,8 @@ export function createAfterPayment(
   async function retryUnsynced(limit = 5) {
     for (const [target, sink] of targets) {
       try {
-        for (const order of await ledger.unsyncedOrders(target, limit)) await deliver(target, sink, order);
+        const since = retryWindowHours[target] ? new Date(Date.now() - retryWindowHours[target] * 3_600_000) : undefined;
+        for (const order of await ledger.unsyncedOrders(target, limit, since)) await deliver(target, sink, order);
       } catch (error) {
         log(events[target].failed, { target, retry: true, error: String(error) });
       }

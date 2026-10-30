@@ -242,14 +242,14 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
       return { changed: false, order: current ? toSummary(current as unknown as OrderRow) : null };
     },
 
-    async unsyncedOrders(target, limit) {
-      const { data, error } = await db
+    async unsyncedOrders(target, limit, since) {
+      let query = db
         .from("orders")
         .select(orderColumns)
         .in("payment_status", ["paid", "processing"])
-        .is(syncColumn[target], null)
-        .order("created_at")
-        .limit(limit);
+        .is(syncColumn[target], null);
+      if (since) query = query.gte("created_at", since.toISOString());
+      const { data, error } = await query.order("created_at").limit(limit);
       if (error) fail("orders.unsynced", error);
       return (data as unknown as OrderRow[]).map(toSummary);
     },

@@ -138,6 +138,16 @@ describe("createAfterPayment", () => {
     expect(await ledger.unsyncedOrders("sheet", 5)).toHaveLength(0);
   });
 
+  it("holt Mails nur für frische Bestellungen nach, das Sheet ohne Zeitgrenze", async () => {
+    const { ledger } = memoryLedger("paid");
+    const spy = vi.spyOn(ledger, "unsyncedOrders");
+    const after = createAfterPayment(ledger, { sheet: vi.fn(), confirmation: vi.fn() }, vi.fn());
+    await after.retryUnsynced();
+    const since = Object.fromEntries(spy.mock.calls.map(([target, , s]) => [target, s]));
+    expect(since.sheet).toBeUndefined();
+    expect(Date.now() - since.confirmation!.getTime()).toBeCloseTo(6 * 3_600_000, -4);
+  });
+
   it("überträgt bei gleichzeitigen Webhooks nur einmal", async () => {
     const { ledger, order } = memoryLedger("paid");
     const sheet = vi.fn().mockResolvedValue(undefined);
