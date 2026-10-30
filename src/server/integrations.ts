@@ -3,9 +3,9 @@ import Stripe from "stripe";
 import { createAfterPayment, type AfterPayment, type OrderSink } from "@/server/after-payment";
 import { createSheetsClient, normalizePrivateKey } from "@/server/google-sheets";
 import { log } from "@/server/log";
-import type { OrderDeps, OrderStore, PaymentLedger } from "@/server/ports";
+import type { AdminStore, OrderDeps, OrderStore, PaymentLedger } from "@/server/ports";
 import { createStripePayments } from "@/server/stripe-payments";
-import { createSupabaseClient, createSupabaseStore } from "@/server/supabase-store";
+import { createAdminStore, createSupabaseClient, createSupabaseStore } from "@/server/supabase-store";
 
 // Baut die Adapter aus den Environment Variables. Fehlt etwas, liefern die Loader null und die
 // Website fällt sauber auf "Bestell per WhatsApp" zurück, statt mit halber Konfiguration zu laufen.
@@ -16,6 +16,7 @@ type Integrations = {
   deps: OrderDeps;
   webhookSecret: string | null;
   afterPayment: AfterPayment;
+  admin: AdminStore;
 };
 
 /** Google-Sheet-Spiegel, sofern Service Account und Sheet-ID konfiguriert sind. */
@@ -40,7 +41,8 @@ function build(): Integrations | null {
   const paymentMethodConfiguration = env.STRIPE_PAYMENT_METHOD_CONFIGURATION;
   if (!supabaseUrl || !supabaseKey || !stripeKey || !paymentMethodConfiguration) return null;
 
-  const store = createSupabaseStore(createSupabaseClient(supabaseUrl, supabaseKey, env.SUPABASE_SCHEMA || "leans"));
+  const db = createSupabaseClient(supabaseUrl, supabaseKey, env.SUPABASE_SCHEMA || "leans");
+  const store = createSupabaseStore(db);
   const stripe = new Stripe(stripeKey, { maxNetworkRetries: 2, appInfo: { name: "leans-bestellseite" } });
   return {
     store,
@@ -48,6 +50,7 @@ function build(): Integrations | null {
     deps: { store, payments: createStripePayments(stripe, { paymentMethodConfiguration }) },
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || null,
     afterPayment: createAfterPayment(store, definedSinks({ sheet: sheetSink(env) }), log),
+    admin: createAdminStore(db),
   };
 }
 
@@ -68,4 +71,8 @@ export function loadPaymentLedger(): PaymentLedger | null {
 export function loadStripeWebhook(): { stripe: Stripe; secret: string; afterPayment: AfterPayment } | null {
   const i = integrations();
   return i?.webhookSecret ? { stripe: i.stripe, secret: i.webhookSecret, afterPayment: i.afterPayment } : null;
+}
+
+export function loadAdminStore(): AdminStore | null {
+  return integrations()?.admin ?? null;
 }

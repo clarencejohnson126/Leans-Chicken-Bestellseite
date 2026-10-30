@@ -118,3 +118,15 @@ export interface PaymentLedger {
 }
 
 export type SyncTarget = "sheet" | "notification";
+
+export type FulfillmentStatus = "NEW" | "PREP" | "READY" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED";
+
+export type AdminOrder = OrderSummary & { fulfillmentStatus: FulfillmentStatus; createdAt: string };
+
+/** Datenzugriff für das Admin-Dashboard. Nur nach requireAdmin() verwenden. */
+export interface AdminStore {
+  ordersForDate(date: string): Promise<AdminOrder[]>;
+  setFulfillment(orderId: string, status: FulfillmentStatus, actor: string): Promise<AdminOrder | null>;
+  ordersPaused(): Promise<boolean>;
+  setOrdersPaused(paused: boolean, actor: string): Promise<void>;
+}

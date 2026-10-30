@@ -10,6 +10,9 @@ import type {
   PaymentUpdate,
   PendingOrderInput,
   SyncTarget,
+  AdminOrder,
+  AdminStore,
+  FulfillmentStatus,
 } from "@/server/ports";
 
 const syncColumn: Record<SyncTarget, string> = { sheet: "sheet_synced_at", notification: "notified_at" };
@@ -260,6 +263,55 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
         .maybeSingle();
       if (error) fail("orders.findBySession", error);
       return data ? toSummary(data as unknown as OrderRow) : null;
+    },
+  };
+}
+
+type AdminRow = OrderRow & { fulfillment_status: FulfillmentStatus; created_at: string };
+
+function toAdminOrder(row: AdminRow): AdminOrder {
+  return { ...toSummary(row), fulfillmentStatus: row.fulfillment_status, createdAt: row.created_at };
+}
+
+export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): AdminStore {
+  const columns = `${orderColumns}, fulfillment_status, created_at`;
+  return {
+    async ordersForDate(date) {
+      const { data, error } = await db
+        .from("orders")
+        .select(columns)
+        .eq("delivery_date", date)
+        .in("payment_status", ["pending", "processing", "paid", "failed", "refunded"])
+        .order("slot_start")
+        .order("created_at");
+      if (error) fail("admin.ordersForDate", error);
+      return (data as unknown as AdminRow[]).map(toAdminOrder);
+    },
+
+    async setFulfillment(orderId, status, actor) {
+      const patch: Record<string, unknown> = { fulfillment_status: status };
+      patch.delivered_at = status === "DELIVERED" ? new Date().toISOString() : null;
+      const { data, error } = await db.from("orders").update(patch).eq("id", orderId).select(columns).maybeSingle();
+      if (error) fail("admin.setFulfillment", error);
+      const { error: eventError } = await db
+        .from("order_events")
+        .insert({ order_id: orderId, type: "fulfillment_status_changed", detail: { status }, actor });
+      if (eventError) fail("admin.setFulfillment.event", eventError);
+      return data ? toAdminOrder(data as unknown as AdminRow) : null;
+    },
+
+    async ordersPaused() {
+      const { data, error } = await db.from("settings").select("value").eq("key", "orders_paused").maybeSingle();
+      if (error) fail("admin.ordersPaused", error);
+      return data?.value === true;
+    },
+
+    async setOrdersPaused(paused, actor) {
+      const { error } = await db
+        .from("settings")
+        .upsert({ key: "orders_paused", value: paused, updated_at: new Date().toISOString() });
+      if (error) fail("admin.setOrdersPaused", error);
+      console.log(JSON.stringify({ event: "orders_paused_changed", paused, actor, ts: new Date().toISOString() }));
     },
   };
 }

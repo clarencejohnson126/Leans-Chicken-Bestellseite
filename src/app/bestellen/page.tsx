@@ -5,7 +5,8 @@ import { OrderForm, type DayOption } from "@/components/order-form";
 import { taxNote } from "@/config/business";
 import { listDeliveryDays } from "@/lib/slots";
 import { formatDay } from "@/lib/time";
-import { loadOrderDeps } from "@/server/integrations";
+import { WhatsAppButton } from "@/components/whatsapp-button";
+import { loadAdminStore, loadOrderDeps } from "@/server/integrations";
 
 export const metadata: Metadata = {
   title: "Bestellen | Lean's Crispy Chicken",
@@ -32,6 +33,17 @@ export default function OrderPage() {
 async function LiveOrderForm() {
   await connection();
   const now = new Date();
+  if (await loadAdminStore()?.ordersPaused()) {
+    return (
+      <div className="notice" style={{ marginTop: 28 }}>
+        <p>
+          <strong>Online-Bestellungen sind gerade pausiert.</strong> Schreib uns auf WhatsApp, dann schauen wir, was
+          geht.
+        </p>
+        <WhatsAppButton label="Per WhatsApp bestellen" />
+      </div>
+    );
+  }
   const deps = loadOrderDeps();
   const slotIds = listDeliveryDays(now).flatMap((d) => d.slots.map((s) => s.id));
   const reserved = deps ? await deps.store.reservedStrips(slotIds) : {};

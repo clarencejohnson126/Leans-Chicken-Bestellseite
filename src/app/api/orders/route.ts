@@ -1,5 +1,5 @@
 import { orderRequestSchema } from "@/lib/validation";
-import { loadOrderDeps } from "@/server/integrations";
+import { loadAdminStore, loadOrderDeps } from "@/server/integrations";
 import { log } from "@/server/log";
 import { createOrder } from "@/server/orders";
 
@@ -30,6 +30,13 @@ export async function POST(request: Request) {
         message: "Die Online-Bezahlung wird gerade eingerichtet. Bestell gern solange per WhatsApp.",
       },
       { status: 503 },
+    );
+  }
+
+  if (await loadAdminStore()?.ordersPaused()) {
+    return Response.json(
+      { code: "paused", message: "Online-Bestellungen sind gerade pausiert. Schreib uns gern auf WhatsApp." },
+      { status: 409 },
     );
   }
 

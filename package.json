@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build",
     "stripe:catalog": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-catalog.mts",
-    "sheets:setup": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sheets-setup.mts"
+    "sheets:setup": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sheets-setup.mts",
+    "admin:hash": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin-hash.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
