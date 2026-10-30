@@ -19,6 +19,7 @@ export const business = {
     phone: "+49 179 1778957",
     // Rechtliche Angaben (Impressum, Datenschutz)
     legalEmail: "info@johnson-services.de",
+    legalPhone: "+49 162 1811123",
     vatId: "DE45212565",
     taxOffice: "Finanzamt Mannheim-Neckarstadt",
   },

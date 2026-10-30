@@ -23,7 +23,7 @@ export default function ImprintPage() {
       </p>
       <h2>Kontakt</h2>
       <p>
-        Telefon: {operator.phone}
+        Telefon: {operator.legalPhone}
         <br />
         E-Mail: <a href={`mailto:${operator.legalEmail}`}>{operator.legalEmail}</a>
       </p>
