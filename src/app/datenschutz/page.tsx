@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <li>Supabase Inc. – Speicherung der Bestelldaten in einer Datenbank in der EU.</li>
         <li>Stripe Payments Europe Ltd. – Zahlungsabwicklung; Stripe verarbeitet deine Zahlungsdaten in eigener Verantwortung.</li>
         <li>Google Ireland Ltd. – interne Bestellübersicht in Google Sheets.</li>
-        <li>Resend – Versand interner Bestellbenachrichtigungen per E-Mail.</li>
+        <li>Resend – Versand von Bestellbestätigungen, Lieferstatus-Mails und internen Bestellbenachrichtigungen per E-Mail.</li>
         <li>WhatsApp Ireland Ltd. – nur wenn du uns von dir aus über WhatsApp kontaktierst.</li>
       </ul>
 

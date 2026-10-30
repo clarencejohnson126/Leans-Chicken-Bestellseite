@@ -1397,3 +1397,146 @@ h3 {
     font-size: 18px;
   }
 }
+.admin-now {
+  margin: 0 0 6px;
+  color: var(--yellow);
+  font-weight: 700;
+}
+.admin-order-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.admin-order-links a {
+  color: var(--cream);
+}
+.admin-refund > summary {
+  list-style: none;
+}
+.admin-refund > summary::-webkit-details-marker {
+  display: none;
+}
+.admin-refund[open] {
+  flex-basis: 100%;
+}
+.admin-refund form {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--red);
+  border-radius: 10px;
+}
+.admin-refund p {
+  margin: 0;
+}
+.admin-badge.pay-refunded {
+  background: #ffffff33;
+}
+.admin-whatsapp-form select {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  background: var(--black);
+  border: 2px solid var(--line);
+  color: inherit;
+  font-size: 16px;
+}
+.admin-qty {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+  font-weight: 700;
+}
+.admin-qty small {
+  color: var(--muted);
+  font-weight: 600;
+}
+.admin-qty input {
+  width: 80px;
+  min-height: 44px;
+  padding: 8px 10px;
+  background: var(--black);
+  border: 2px solid var(--line);
+  color: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
+/* Bestellverfolgung */
+.tracking-steps {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.tracking-steps li {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 0 0 22px 36px;
+  color: var(--muted);
+}
+.tracking-steps li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--black);
+}
+.tracking-steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 24px;
+  bottom: 2px;
+  width: 2px;
+  background: var(--line);
+}
+.tracking-steps li.done,
+.tracking-steps li.current {
+  color: var(--cream);
+}
+.tracking-steps li.done::before {
+  background: var(--green);
+  border-color: var(--green);
+}
+.tracking-steps li.done::after {
+  background: var(--green);
+}
+.tracking-steps li.current::before {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 0 6px #e3222833;
+  animation: tracking-pulse 1.6s ease-in-out infinite;
+}
+.tracking-steps li.current strong {
+  font-size: 20px;
+}
+.tracking-steps small {
+  color: var(--muted);
+  font-weight: 600;
+}
+@keyframes tracking-pulse {
+  50% {
+    box-shadow: 0 0 0 10px #e3222811;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tracking-steps li.current::before {
+    animation: none;
+  }
+}

@@ -35,8 +35,13 @@ function memoryLedger(status: PaymentStatus = "pending") {
     async unsyncedOrders(target) {
       return synced.has(target) ? [] : [order];
     },
-    async markSynced(_id, target) {
+    async claimSync(_id, target) {
+      if (synced.has(target)) return false;
       synced.add(target);
+      return true;
+    },
+    async releaseSync(_id, target) {
+      synced.delete(target);
     },
   };
   return { ledger, order };
@@ -131,5 +136,13 @@ describe("createAfterPayment", () => {
     expect(sheet).toHaveBeenCalledTimes(2);
     expect(log).toHaveBeenCalledWith("sheet_sync_success", expect.anything());
     expect(await ledger.unsyncedOrders("sheet", 5)).toHaveLength(0);
+  });
+
+  it("überträgt bei gleichzeitigen Webhooks nur einmal", async () => {
+    const { ledger, order } = memoryLedger("paid");
+    const sheet = vi.fn().mockResolvedValue(undefined);
+    const after = createAfterPayment(ledger, { sheet }, vi.fn());
+    await Promise.all([after.onPaid(order, "paid"), after.retryUnsynced()]);
+    expect(sheet).toHaveBeenCalledTimes(1);
   });
 });

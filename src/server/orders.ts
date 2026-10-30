@@ -71,7 +71,10 @@ export async function createOrder(
     strips: cart.strips,
     totalCents: cart.totalCents,
     maxStripsPerSlot: schedule.maxStripsPerWindow,
-    expiresAt: new Date(now.getTime() + schedule.pendingHoldMinutes * 60_000),
+    // WhatsApp-Kunden bekommen den Zahlungslink per Nachricht und brauchen länger als jemand im Checkout.
+    expiresAt: new Date(
+      now.getTime() + (source === "whatsapp" ? schedule.whatsappHoldMinutes : schedule.pendingHoldMinutes) * 60_000,
+    ),
   });
 
   if (!created.ok) {

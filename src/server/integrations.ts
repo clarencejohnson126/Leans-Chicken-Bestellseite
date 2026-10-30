@@ -1,9 +1,11 @@
 import "server-only";
 import Stripe from "stripe";
+import { createAdminOps, type AdminOps } from "@/server/admin-ops";
 import { createAfterPayment, type AfterPayment, type OrderSink } from "@/server/after-payment";
-import { createSheetsClient, normalizePrivateKey } from "@/server/google-sheets";
+import { createSheetsClient, normalizePrivateKey, type SheetsClient } from "@/server/google-sheets";
 import { log } from "@/server/log";
-import type { AdminStore, OrderDeps, OrderStore, PaymentLedger } from "@/server/ports";
+import { createResendMailer, type Mailer } from "@/server/mailer";
+import type { AdminStore, OrderDeps, OrderStore, PaymentLedger, TrackingStore } from "@/server/ports";
 import { createStripePayments } from "@/server/stripe-payments";
 import { createAdminStore, createSupabaseClient, createSupabaseStore } from "@/server/supabase-store";
 
@@ -16,15 +18,22 @@ type Integrations = {
   deps: OrderDeps;
   webhookSecret: string | null;
   afterPayment: AfterPayment;
-  admin: AdminStore;
+  admin: AdminStore & TrackingStore;
+  adminOps: AdminOps;
 };
 
 /** Google-Sheet-Spiegel, sofern Service Account und Sheet-ID konfiguriert sind. */
-function sheetSink(env: NodeJS.ProcessEnv): OrderSink | undefined {
+function sheetsClient(env: NodeJS.ProcessEnv): SheetsClient | undefined {
   const { GOOGLE_SERVICE_ACCOUNT_EMAIL: email, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: key, GOOGLE_SHEET_ID: sheetId } = env;
   if (!email || !key || !sheetId) return undefined;
-  const sheets = createSheetsClient({ email, privateKey: normalizePrivateKey(key) }, sheetId);
-  return (order) => sheets.appendOrder(order);
+  return createSheetsClient({ email, privateKey: normalizePrivateKey(key) }, sheetId);
+}
+
+/** E-Mails über Resend, sofern API-Key und verifizierter Absender konfiguriert sind. */
+function mailer(env: NodeJS.ProcessEnv): Mailer | undefined {
+  const { RESEND_API_KEY: apiKey, ORDER_NOTIFICATION_FROM: from, ORDER_NOTIFICATION_TO: notifyTo } = env;
+  if (!apiKey || !from) return undefined;
+  return createResendMailer({ apiKey, from, notifyTo: notifyTo || undefined, replyTo: notifyTo || undefined });
 }
 
 let cached: Integrations | null | undefined;
@@ -44,13 +53,29 @@ function build(): Integrations | null {
   const db = createSupabaseClient(supabaseUrl, supabaseKey, env.SUPABASE_SCHEMA || "leans");
   const store = createSupabaseStore(db);
   const stripe = new Stripe(stripeKey, { maxNetworkRetries: 2, appInfo: { name: "leans-bestellseite" } });
+  const payments = createStripePayments(stripe, { paymentMethodConfiguration });
+  const sheets = sheetsClient(env);
+  const mail = mailer(env);
+  const admin = createAdminStore(db);
+  const sinks = definedSinks({
+    sheet: sheets && ((order) => sheets.appendOrder(order)),
+    notification: mail?.notification,
+    confirmation: mail?.confirmation,
+  });
   return {
     store,
     stripe,
-    deps: { store, payments: createStripePayments(stripe, { paymentMethodConfiguration }) },
+    deps: { store, payments },
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || null,
-    afterPayment: createAfterPayment(store, definedSinks({ sheet: sheetSink(env) }), log),
-    admin: createAdminStore(db),
+    afterPayment: createAfterPayment(store, sinks, log),
+    admin,
+    adminOps: createAdminOps({
+      store: admin,
+      payments,
+      sheet: sheets && ((orderNumber, update) => sheets.updateOrderStatus(orderNumber, update)),
+      onTheWay: mail?.onTheWay,
+      log,
+    }),
   };
 }
 
@@ -74,5 +99,13 @@ export function loadStripeWebhook(): { stripe: Stripe; secret: string; afterPaym
 }
 
 export function loadAdminStore(): AdminStore | null {
+  return integrations()?.admin ?? null;
+}
+
+export function loadAdminOps(): AdminOps | null {
+  return integrations()?.adminOps ?? null;
+}
+
+export function loadTrackingStore(): TrackingStore | null {
   return integrations()?.admin ?? null;
 }

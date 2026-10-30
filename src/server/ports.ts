@@ -60,6 +60,8 @@ export interface PaymentProvider {
   createCheckout(order: StoredOrder): Promise<CheckoutSession>;
   /** Beendet einen offenen Checkout, damit er nicht mehr bezahlt werden kann. */
   expireCheckout(sessionId: string): Promise<"expired" | "already_closed">;
+  /** Erstattet den vollen Betrag. Idempotent je Bestellung: ein zweiter Aufruf erstattet nicht doppelt. */
+  refund(paymentIntentId: string, orderId: string): Promise<{ refundId: string }>;
 }
 
 export type OrderDeps = {
@@ -90,6 +92,8 @@ export type OrderSummary = {
   strips: number;
   totalCents: number;
   items: { itemId: string; name: string; quantity: number; lineTotalCents: number }[];
+  /** Schlüssel für den öffentlichen Verfolgungslink. */
+  trackingToken: string;
 };
 
 /** Ergebnis eines Stripe-Ereignisses, das der Webhook auf eine Bestellung anwendet. */
@@ -114,19 +118,40 @@ export interface PaymentLedger {
   findOrderBySession(sessionId: string): Promise<OrderSummary | null>;
   /** Bezahlte bzw. SEPA-eingereichte Bestellungen, die noch nicht ins Ziel (Sheet, Mail) übertragen wurden. */
   unsyncedOrders(target: SyncTarget, limit: number): Promise<OrderSummary[]>;
-  markSynced(orderId: string, target: SyncTarget): Promise<void>;
+  /**
+   * Beansprucht die Übertragung atomar (setzt den Zeitstempel nur, wenn er noch leer ist). Laufen zwei
+   * Webhooks gleichzeitig, bekommt nur einer true; so entsteht im Sheet nie eine doppelte Zeile.
+   */
+  claimSync(orderId: string, target: SyncTarget): Promise<boolean>;
+  /** Gibt eine Beanspruchung nach gescheiterter Übertragung frei, damit der Retry sie nachholt. */
+  releaseSync(orderId: string, target: SyncTarget): Promise<void>;
 }
 
-export type SyncTarget = "sheet" | "notification";
+export type SyncTarget = "sheet" | "notification" | "confirmation";
 
 export type FulfillmentStatus = "NEW" | "PREP" | "READY" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED";
 
-export type AdminOrder = OrderSummary & { fulfillmentStatus: FulfillmentStatus; createdAt: string };
+export type AdminOrder = OrderSummary & {
+  fulfillmentStatus: FulfillmentStatus;
+  createdAt: string;
+  checkoutUrl: string | null;
+  paymentIntentId: string | null;
+  outForDeliveryAt: string | null;
+  deliveredAt: string | null;
+};
 
 /** Datenzugriff für das Admin-Dashboard. Nur nach requireAdmin() verwenden. */
 export interface AdminStore {
   ordersForDate(date: string): Promise<AdminOrder[]>;
+  getOrder(orderId: string): Promise<AdminOrder | null>;
   setFulfillment(orderId: string, status: FulfillmentStatus, actor: string): Promise<AdminOrder | null>;
+  /** paid → refunded, Lieferung storniert. null, wenn die Bestellung nicht (mehr) bezahlt war. */
+  markRefunded(orderId: string, refundId: string, actor: string): Promise<AdminOrder | null>;
   ordersPaused(): Promise<boolean>;
   setOrdersPaused(paused: boolean, actor: string): Promise<void>;
+}
+
+/** Öffentliche Bestellverfolgung. Liefert nur, was der Kunde über den Link sehen darf. */
+export interface TrackingStore {
+  findByTrackingToken(token: string): Promise<AdminOrder | null>;
 }

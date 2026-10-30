@@ -1,7 +1,8 @@
 import type { PaidHook } from "@/server/payment-events";
 import type { OrderSummary, PaymentLedger, SyncTarget } from "@/server/ports";
 
-// Was nach einem Zahlungseingang passiert: Zeile ins Google Sheet, Benachrichtigung an Lean.
+// Was nach einem Zahlungseingang passiert: Zeile ins Google Sheet, Benachrichtigung an Lean,
+// Bestellbestätigung mit Verfolgungslink an den Kunden.
 // Jedes Ziel ist optional und unabhängig. Fehler werden geloggt, nie geworfen: Die Bestellung ist
 // in Supabase sicher, und retryUnsynced trägt fehlende Übertragungen beim nächsten Webhook nach.
 
@@ -13,6 +14,7 @@ export type OrderSink = (order: OrderSummary) => Promise<void>;
 const events: Record<SyncTarget, { ok: SyncLogEvent; failed: SyncLogEvent }> = {
   sheet: { ok: "sheet_sync_success", failed: "sheet_sync_failed" },
   notification: { ok: "notification_success", failed: "notification_failed" },
+  confirmation: { ok: "notification_success", failed: "notification_failed" },
 };
 
 export function createAfterPayment(
@@ -24,11 +26,18 @@ export function createAfterPayment(
 
   async function deliver(target: SyncTarget, sink: OrderSink, order: OrderSummary) {
     try {
-      await sink(order);
-      await ledger.markSynced(order.id, target);
-      log(events[target].ok, { orderId: order.id, orderNumber: order.orderNumber });
+      // Erst beanspruchen, dann senden: Ein parallel laufender Webhook überträgt dieselbe Bestellung nicht.
+      if (!(await ledger.claimSync(order.id, target))) return;
     } catch (error) {
-      log(events[target].failed, { orderId: order.id, orderNumber: order.orderNumber, error: String(error) });
+      log(events[target].failed, { target, orderId: order.id, orderNumber: order.orderNumber, error: String(error) });
+      return;
+    }
+    try {
+      await sink(order);
+      log(events[target].ok, { target, orderId: order.id, orderNumber: order.orderNumber });
+    } catch (error) {
+      log(events[target].failed, { target, orderId: order.id, orderNumber: order.orderNumber, error: String(error) });
+      await ledger.releaseSync(order.id, target).catch(() => {});
     }
   }
 
@@ -42,7 +51,7 @@ export function createAfterPayment(
       try {
         for (const order of await ledger.unsyncedOrders(target, limit)) await deliver(target, sink, order);
       } catch (error) {
-        log(events[target].failed, { retry: true, error: String(error) });
+        log(events[target].failed, { target, retry: true, error: String(error) });
       }
     }
   }

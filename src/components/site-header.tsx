@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { Logo } from "@/components/brand-logo";
+import { Suspense } from "react";
+import { Logo, LogoLink } from "@/components/brand-logo";
 
 export function SiteHeader() {
   return (
     <header className="header">
       <div className="wrap header-inner">
-        <Logo />
+        {/* usePathname braucht auf dynamischen Seiten (z. B. Bestellverfolgung) eine Suspense-Grenze. */}
+        <Suspense fallback={<LogoLink />}>
+          <Logo />
+        </Suspense>
         <nav className="header-nav" aria-label="Hauptnavigation">
           <Link href="/#menue">Menü</Link>
           <Link href="/#so-gehts">So geht&apos;s</Link>

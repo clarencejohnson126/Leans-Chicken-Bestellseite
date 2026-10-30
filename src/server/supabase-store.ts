@@ -13,9 +13,14 @@ import type {
   AdminOrder,
   AdminStore,
   FulfillmentStatus,
+  TrackingStore,
 } from "@/server/ports";
 
-const syncColumn: Record<SyncTarget, string> = { sheet: "sheet_synced_at", notification: "notified_at" };
+const syncColumn: Record<SyncTarget, string> = {
+  sheet: "sheet_synced_at",
+  notification: "notified_at",
+  confirmation: "confirmation_sent_at",
+};
 
 // Supabase-Adapter für Bestellungen und Zahlungsstatus. Läuft nur auf dem Server mit dem
 // Secret Key; das Schema (Standard "leans") ist per RLS für anon/authenticated gesperrt.
@@ -48,11 +53,12 @@ type OrderRow = {
   slot_end: string;
   strips: number;
   total_cents: number;
+  tracking_token: string;
   order_items?: { item_id: string; item_name_snapshot: string; quantity: number; unit_price_cents_snapshot: number }[];
 };
 
 const orderColumns =
-  "id, order_number, source, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
+  "id, order_number, source, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, tracking_token, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
 
 function toSummary(row: OrderRow): OrderSummary {
   return {
@@ -80,6 +86,7 @@ function toSummary(row: OrderRow): OrderSummary {
       quantity: i.quantity,
       lineTotalCents: i.quantity * i.unit_price_cents_snapshot,
     })),
+    trackingToken: row.tracking_token,
   };
 }
 
@@ -148,7 +155,7 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
     async attachCheckout(orderId, checkout: CheckoutSession) {
       const { error } = await db
         .from("orders")
-        .update({ stripe_checkout_session_id: checkout.sessionId })
+        .update({ stripe_checkout_session_id: checkout.sessionId, checkout_url: checkout.url })
         .eq("id", orderId);
       if (error) fail("orders.attachCheckout", error);
       await addEvent(orderId, "checkout_created", { session_id: checkout.sessionId });
@@ -247,12 +254,20 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
       return (data as unknown as OrderRow[]).map(toSummary);
     },
 
-    async markSynced(orderId, target) {
-      const { error } = await db
+    async claimSync(orderId, target) {
+      const { data, error } = await db
         .from("orders")
         .update({ [syncColumn[target]]: new Date().toISOString() })
-        .eq("id", orderId);
-      if (error) fail("orders.markSynced", error);
+        .eq("id", orderId)
+        .is(syncColumn[target], null)
+        .select("id");
+      if (error) fail("orders.claimSync", error);
+      return (data ?? []).length > 0;
+    },
+
+    async releaseSync(orderId, target) {
+      const { error } = await db.from("orders").update({ [syncColumn[target]]: null }).eq("id", orderId);
+      if (error) fail("orders.releaseSync", error);
     },
 
     async findOrderBySession(sessionId) {
@@ -267,14 +282,48 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
   };
 }
 
-type AdminRow = OrderRow & { fulfillment_status: FulfillmentStatus; created_at: string };
+type AdminRow = OrderRow & {
+  fulfillment_status: FulfillmentStatus;
+  created_at: string;
+  checkout_url: string | null;
+  stripe_payment_intent_id: string | null;
+  out_for_delivery_at: string | null;
+  delivered_at: string | null;
+};
 
 function toAdminOrder(row: AdminRow): AdminOrder {
-  return { ...toSummary(row), fulfillmentStatus: row.fulfillment_status, createdAt: row.created_at };
+  return {
+    ...toSummary(row),
+    fulfillmentStatus: row.fulfillment_status,
+    createdAt: row.created_at,
+    checkoutUrl: row.checkout_url,
+    paymentIntentId: row.stripe_payment_intent_id,
+    outForDeliveryAt: row.out_for_delivery_at,
+    deliveredAt: row.delivered_at,
+  };
 }
 
-export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): AdminStore {
-  const columns = `${orderColumns}, fulfillment_status, created_at`;
+// Zeitstempel je Lieferstatus. Zurück auf einen früheren Schritt löscht die späteren.
+function fulfillmentTimestamps(status: FulfillmentStatus, now: string) {
+  if (status === "OUT_FOR_DELIVERY") return { out_for_delivery_at: now, delivered_at: null };
+  if (status === "DELIVERED") return { delivered_at: now };
+  return { out_for_delivery_at: null, delivered_at: null };
+}
+
+export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): AdminStore & TrackingStore {
+  const columns = `${orderColumns}, fulfillment_status, created_at, checkout_url, stripe_payment_intent_id, out_for_delivery_at, delivered_at`;
+
+  async function addEvent(orderId: string, type: string, detail: Record<string, unknown>, actor: string) {
+    const { error } = await db.from("order_events").insert({ order_id: orderId, type, detail, actor });
+    if (error) fail("admin.order_events.insert", error);
+  }
+
+  async function one(column: string, value: string) {
+    const { data, error } = await db.from("orders").select(columns).eq(column, value).maybeSingle();
+    if (error) fail(`admin.orderBy.${column}`, error);
+    return data ? toAdminOrder(data as unknown as AdminRow) : null;
+  }
+
   return {
     async ordersForDate(date) {
       const { data, error } = await db
@@ -288,15 +337,37 @@ export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): A
       return (data as unknown as AdminRow[]).map(toAdminOrder);
     },
 
+    getOrder(orderId) {
+      return one("id", orderId);
+    },
+
+    findByTrackingToken(token) {
+      return one("tracking_token", token);
+    },
+
     async setFulfillment(orderId, status, actor) {
-      const patch: Record<string, unknown> = { fulfillment_status: status };
-      patch.delivered_at = status === "DELIVERED" ? new Date().toISOString() : null;
+      const patch = { fulfillment_status: status, ...fulfillmentTimestamps(status, new Date().toISOString()) };
       const { data, error } = await db.from("orders").update(patch).eq("id", orderId).select(columns).maybeSingle();
       if (error) fail("admin.setFulfillment", error);
-      const { error: eventError } = await db
-        .from("order_events")
-        .insert({ order_id: orderId, type: "fulfillment_status_changed", detail: { status }, actor });
-      if (eventError) fail("admin.setFulfillment.event", eventError);
+      await addEvent(orderId, "fulfillment_status_changed", { status }, actor);
+      return data ? toAdminOrder(data as unknown as AdminRow) : null;
+    },
+
+    async markRefunded(orderId, refundId, actor) {
+      const { data, error } = await db
+        .from("orders")
+        .update({
+          payment_status: "refunded",
+          fulfillment_status: "CANCELLED",
+          refunded_at: new Date().toISOString(),
+          stripe_refund_id: refundId,
+        })
+        .eq("id", orderId)
+        .eq("payment_status", "paid")
+        .select(columns)
+        .maybeSingle();
+      if (error) fail("admin.markRefunded", error);
+      if (data) await addEvent(orderId, "payment_refunded", { refund_id: refundId }, actor);
       return data ? toAdminOrder(data as unknown as AdminRow) : null;
     },
 

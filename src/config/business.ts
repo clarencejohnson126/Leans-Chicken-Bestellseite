@@ -36,3 +36,13 @@ export function whatsappLink(text: string = business.whatsapp.orderText) {
 export const taxNote = business.smallBusiness
   ? "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet."
   : "Alle Preise inkl. MwSt.";
+
+/** Öffentlicher Link, unter dem der Kunde den Status seiner Bestellung verfolgt. */
+export function trackingUrl(token: string) {
+  return `${business.siteUrl}/bestellung/verfolgen/${token}`;
+}
+
+/** WhatsApp-Chat mit einem Kunden (E.164-Nummer) und vorausgefüllter Nachricht. */
+export function whatsappTo(phone: string, text: string) {
+  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+}

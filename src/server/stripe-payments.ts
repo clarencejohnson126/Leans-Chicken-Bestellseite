@@ -10,9 +10,10 @@ import type { PaymentProvider, StoredOrder } from "@/server/ports";
 // die Produkte aus dem per `npm run stripe:catalog` synchronisierten Stripe-Katalog.
 // Zahlungsarten steuert die Payment Method Configuration (Karte inkl. Apple/Google Pay, SEPA).
 
-// Stripe verlangt mindestens 30 Minuten Laufzeit. Die Reservierung in Supabase ist kürzer
-// (schedule.pendingHoldMinutes); abgelaufene Sessions beendet expireStaleCheckouts aktiv.
-const SESSION_LIFETIME_MS = 30 * 60_000 + 60_000;
+// Stripe verlangt mindestens 30 Minuten Laufzeit. Die Reservierung in Supabase kann kürzer sein
+// (schedule.pendingHoldMinutes); abgelaufene Sessions beendet expireStaleCheckouts aktiv. Längere
+// Reservierungen (WhatsApp-Zahlungslinks) bekommen eine Minute Puffer über das Reservierungsende.
+const MIN_SESSION_LIFETIME_MS = 30 * 60_000 + 60_000;
 
 export function createStripePayments(
   stripe: Stripe,
@@ -22,7 +23,7 @@ export function createStripePayments(
 
   return {
     async createCheckout(order: StoredOrder) {
-      const expiresMs = Date.now() + SESSION_LIFETIME_MS;
+      const expiresMs = Math.max(Date.now() + MIN_SESSION_LIFETIME_MS, order.expiresAt.getTime() + 60_000);
       const metadata = { order_id: order.id, order_number: order.orderNumber, source: order.source };
       const delivery = `${formatDay(order.slot.date)}, ${formatWindow(order.slot.start, order.slot.end)}`;
 
@@ -44,7 +45,12 @@ export function createStripePayments(
             },
           })),
           custom_text: {
-            submit: { message: `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}` },
+            submit: {
+              message:
+                `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}` +
+                // Website-Kunden bestätigen die AGB im Formular, WhatsApp-Kunden mit der Zahlung.
+                (order.source === "whatsapp" ? ` · Es gelten unsere AGB: ${siteUrl}/agb` : ""),
+            },
           },
           expires_at: Math.floor(expiresMs / 1000),
           success_url: `${siteUrl}/bestellung/danke?session_id={CHECKOUT_SESSION_ID}`,
@@ -66,6 +72,14 @@ export function createStripePayments(
         if ((error as { type?: string }).type === "StripeInvalidRequestError") return "already_closed";
         throw error;
       }
+    },
+
+    async refund(paymentIntentId, orderId) {
+      const refund = await stripe.refunds.create(
+        { payment_intent: paymentIntentId, reason: "requested_by_customer", metadata: { order_id: orderId } },
+        { idempotencyKey: `refund_${orderId}` },
+      );
+      return { refundId: refund.id };
     },
   };
 }

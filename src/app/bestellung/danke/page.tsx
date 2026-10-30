@@ -77,6 +77,11 @@ async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke"
       )}
       <p className="lead">Änderungen? Schreib uns auf WhatsApp.</p>
       <div className="status-actions">
+        {order && (order.paymentStatus === "paid" || order.paymentStatus === "processing") && (
+          <Link href={`/bestellung/verfolgen/${order.trackingToken}`} className="btn btn-red">
+            Bestellung verfolgen
+          </Link>
+        )}
         <WhatsAppButton
           label="WhatsApp schreiben"
           text={order ? `Hi Lean's, zu meiner Bestellung ${order.orderNumber}: ` : undefined}

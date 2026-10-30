@@ -1,5 +1,5 @@
 import { createSign } from "node:crypto";
-import type { OrderSummary } from "@/server/ports";
+import type { FulfillmentStatus, OrderSummary } from "@/server/ports";
 
 // Google-Sheets-Spiegel der bezahlten Bestellungen. Supabase bleibt die Wahrheit; das Sheet ist
 // die Arbeitsliste für Lean. Authentifizierung per Service Account (JWT, RS256) ohne googleapis-SDK.
@@ -28,7 +28,7 @@ export const sheetColumns = [
   "Bestell-ID",
 ] as const;
 
-const paymentLabel: Record<OrderSummary["paymentStatus"], string> = {
+export const sheetPaymentLabel: Record<OrderSummary["paymentStatus"], string> = {
   pending: "offen",
   processing: "SEPA eingereicht",
   paid: "bezahlt",
@@ -37,6 +37,21 @@ const paymentLabel: Record<OrderSummary["paymentStatus"], string> = {
   refunded: "erstattet",
   released: "freigegeben",
 };
+
+/** Werte des Lieferstatus-Dropdowns (scripts/sheets-setup.mts). */
+export const sheetFulfillmentLabel: Record<FulfillmentStatus, string> = {
+  NEW: "NEU",
+  PREP: "IN ZUBEREITUNG",
+  READY: "FERTIG",
+  OUT_FOR_DELIVERY: "UNTERWEGS",
+  DELIVERED: "GELIEFERT",
+  CANCELLED: "STORNIERT",
+};
+
+/** Spaltenbuchstabe einer Sheet-Spalte (A … S). */
+function columnLetter(name: (typeof sheetColumns)[number]) {
+  return String.fromCharCode(65 + sheetColumns.indexOf(name));
+}
 
 function berlin(date: Date) {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -52,8 +67,8 @@ export function orderToRow(order: OrderSummary, receivedAt: Date): (string | num
     berlin(receivedAt),
     order.deliveryDate,
     `${order.slotStart}–${order.slotEnd}`,
-    paymentLabel[order.paymentStatus],
-    "NEU",
+    sheetPaymentLabel[order.paymentStatus],
+    sheetFulfillmentLabel.NEW,
     order.customerName,
     // Führendes Hochkomma verhindert, dass Sheets "+49…" als Formel oder Zahl liest.
     `'${order.customerPhone}`,
@@ -120,6 +135,31 @@ export function createSheetsClient(account: ServiceAccount, spreadsheetId: strin
         method: "POST",
         body: { values: [orderToRow(order, receivedAt)] },
       });
+    },
+
+    /**
+     * Schreibt Liefer- und/oder Zahlungsstatus in die Zeile der Bestellung. Steht die Bestellung
+     * (noch) nicht im Sheet, passiert nichts: Unbezahlte Bestellungen werden nie übertragen.
+     */
+    async updateOrderStatus(
+      orderNumber: string,
+      update: { fulfillment?: FulfillmentStatus; payment?: OrderSummary["paymentStatus"] },
+    ): Promise<"updated" | "not_found"> {
+      const key = columnLetter("Bestellnummer");
+      const column = await call(`/values/${encodeURIComponent(`${SHEET_TAB}!${key}:${key}`)}`, { method: "GET" });
+      const rows = (column.values as string[][] | undefined) ?? [];
+      const index = rows.findIndex((r) => r[0] === orderNumber);
+      if (index < 1) return "not_found"; // 0 = Kopfzeile
+      const row = index + 1;
+      const data = [];
+      if (update.fulfillment) {
+        data.push({ range: `${SHEET_TAB}!${columnLetter("Lieferstatus")}${row}`, values: [[sheetFulfillmentLabel[update.fulfillment]]] });
+      }
+      if (update.payment) {
+        data.push({ range: `${SHEET_TAB}!${columnLetter("Zahlung")}${row}`, values: [[sheetPaymentLabel[update.payment]]] });
+      }
+      if (data.length) await call("/values:batchUpdate", { method: "POST", body: { valueInputOption: "USER_ENTERED", data } });
+      return "updated";
     },
   };
 }

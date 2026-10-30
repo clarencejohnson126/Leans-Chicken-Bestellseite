@@ -20,6 +20,8 @@ export const schedule = {
   // Unbezahlte Bestellungen halten Kapazität so lange. Stripe-Sessions laufen technisch mindestens
   // 30 Minuten; abgelaufene Reservierungen werden deshalb vor jeder neuen Bestellung aktiv beendet.
   pendingHoldMinutes: 15,
+  // Zahlungslinks aus WhatsApp-Bestellungen reservieren länger, weil der Kunde sie erst öffnen muss.
+  whatsappHoldMinutes: 60,
 } as const;
 
 // Lieferradius über Postleitzahl. FRANKLIN liegt in 68309; Adresse wird zusätzlich manuell geprüft.

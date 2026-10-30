@@ -60,6 +60,7 @@ function deps(store = memoryStore()): OrderDeps & { store: ReturnType<typeof mem
         expiresAt: order.expiresAt,
       }),
       expireCheckout: vi.fn(async () => "expired" as const),
+      refund: vi.fn(async () => ({ refundId: "re_test" })),
     },
   };
 }
@@ -72,6 +73,13 @@ describe("createOrder", () => {
     expect(d.store.orders[0].totalCents).toBe(2000);
     expect(d.store.orders[0].strips).toBe(10);
     expect(d.store.orders[0].expiresAt.getTime() - now.getTime()).toBe(15 * 60_000);
+  });
+
+  it("reserviert für WhatsApp-Zahlungslinks länger", async () => {
+    const d = deps();
+    await createOrder(request({ "crunch-combo": 2 }), "whatsapp", d, now, noop);
+    expect(d.store.orders[0].source).toBe("whatsapp");
+    expect(d.store.orders[0].expiresAt.getTime() - now.getTime()).toBe(60 * 60_000);
   });
 
   it("lehnt Bestellungen unter dem Mindestbestellwert ab", async () => {

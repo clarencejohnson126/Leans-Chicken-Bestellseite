@@ -3,6 +3,10 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { logoutAction, setPausedAction, setStatusAction } from "@/app/admin/actions";
+import { AdminClock } from "@/app/admin/clock";
+import { RefundButton } from "@/app/admin/refund-button";
+import { CopyButton } from "@/components/copy-button";
+import { business, trackingUrl, whatsappTo } from "@/config/business";
 import { findItem } from "@/config/menu";
 import { schedule } from "@/config/schedule";
 import { formatEuro, formatWindow } from "@/lib/format";
@@ -96,6 +100,17 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
   const { tag } = await searchParams;
   const day = typeof tag === "string" && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : defaultDay(today);
   const dayTabs = [...new Set([today, ...listDeliveryDays(now).map((d) => d.date), day])].sort();
+  const deliversToday = (schedule.deliveryWeekdays as readonly number[]).includes(isoWeekday(today));
+  const dayLabel =
+    day === today
+      ? deliversToday
+        ? "Heute"
+        : "Heute · kein Liefertag"
+      : day === defaultDay(today)
+        ? "Nächster Liefertag"
+        : day < today
+          ? "Vergangener Tag"
+          : "Liefertag";
 
   const [orders, paused] = await Promise.all([store.ordersForDate(day), store.ordersPaused()]);
   const active = orders.filter(isActive);
@@ -109,10 +124,16 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
     <>
       <div className="admin-top">
         <div>
-          <p className="eyebrow">Admin · {admin.email}</p>
+          <p className="admin-now">
+            <AdminClock initial={now.getTime()} />
+          </p>
+          <p className="eyebrow">{dayLabel}</p>
           <h1 className="admin-title">{formatDay(day)}</h1>
         </div>
         <div className="admin-top-actions">
+          <Link href="/admin/whatsapp" className="btn btn-whatsapp">
+            + WhatsApp-Bestellung
+          </Link>
           <form action={setPausedAction}>
             <input type="hidden" name="paused" value={paused ? "false" : "true"} />
             <button type="submit" className={`btn ${paused ? "btn-red" : "btn-ghost"}`}>
@@ -120,7 +141,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
             </button>
           </form>
           <form action={logoutAction}>
-            <button type="submit" className="btn btn-ghost">
+            <button type="submit" className="btn btn-ghost" title={admin.email}>
               Logout
             </button>
           </form>
@@ -184,6 +205,11 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
 function OrderCard({ order: o }: { order: AdminOrder }) {
   const step = nextStep[o.fulfillmentStatus];
   const address = `${o.street}, ${o.postalCode} Mannheim`;
+  const firstName = o.customerName.split(" ")[0];
+  const tracking = trackingUrl(o.trackingToken);
+  const awaitingPayment = o.paymentStatus === "pending" && o.checkoutUrl;
+  const paymentText = `Hi ${firstName}, hier kannst du deine Bestellung ${o.orderNumber} bei ${business.name} bezahlen (${formatEuro(o.totalCents)}): ${o.checkoutUrl}`;
+  const trackingText = `Hi ${firstName}, hier siehst du live, wo deine Bestellung ${o.orderNumber} gerade ist: ${tracking}`;
   return (
     <li className={`admin-order status-${o.fulfillmentStatus.toLowerCase()} ${isActive(o) ? "" : "inactive"}`}>
       <div className="admin-order-head">
@@ -228,7 +254,7 @@ function OrderCard({ order: o }: { order: AdminOrder }) {
             </button>
           </form>
         )}
-        {o.fulfillmentStatus === "CANCELLED" && (
+        {o.fulfillmentStatus === "CANCELLED" && o.paymentStatus !== "refunded" && (
           <form action={setStatusAction}>
             <input type="hidden" name="orderId" value={o.id} />
             <input type="hidden" name="status" value="NEW" />
@@ -237,7 +263,29 @@ function OrderCard({ order: o }: { order: AdminOrder }) {
             </button>
           </form>
         )}
+        {o.paymentStatus === "paid" && <RefundButton orderId={o.id} amount={formatEuro(o.totalCents)} />}
       </div>
+      {awaitingPayment && (
+        <div className="admin-order-links">
+          <span>Zahlungslink:</span>
+          <a href={whatsappTo(o.customerPhone, paymentText)} target="_blank" rel="noreferrer">
+            per WhatsApp senden
+          </a>
+          <CopyButton text={o.checkoutUrl!} label="kopieren" className="btn-link" />
+        </div>
+      )}
+      {isActive(o) && (
+        <div className="admin-order-links">
+          <span>Verfolgen-Link:</span>
+          <a href={whatsappTo(o.customerPhone, trackingText)} target="_blank" rel="noreferrer">
+            per WhatsApp senden
+          </a>
+          <CopyButton text={tracking} label="kopieren" className="btn-link" />
+          <a href={tracking} target="_blank" rel="noreferrer">
+            ansehen
+          </a>
+        </div>
+      )}
     </li>
   );
 }
