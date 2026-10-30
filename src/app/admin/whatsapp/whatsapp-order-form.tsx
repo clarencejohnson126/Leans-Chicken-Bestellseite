@@ -17,7 +17,7 @@ export type AdminDayOption = {
 
 function paymentMessage(firstName: string, orderNumber: string, total: string, url: string) {
   return [
-    `Hi ${firstName}, danke für deine Bestellung bei ${business.name}! 🍗`,
+    `Hi ${firstName}, danke für deine Bestellung bei ${business.name}!`,
     `Bestellung ${orderNumber} · ${total}`,
     `Hier kannst du bezahlen (Karte, Apple Pay, Google Pay oder SEPA): ${url}`,
     `Der Link ist ${schedule.whatsappHoldMinutes} Minuten gültig, so lange halten wir dir den Platz frei.`,

@@ -1,3 +1,7 @@
+import { menus, sides } from "@/config/menu";
+import { deliveryArea, schedule } from "@/config/schedule";
+import { formatEuro } from "@/lib/format";
+
 // Zentrale Betreiber- und Markendaten. Rechtstexte, Footer und Checkout lesen nur von hier.
 export const business = {
   name: "Lean's Crispy Chicken",
@@ -17,7 +21,6 @@ export const business = {
   whatsapp: {
     // Internationales Format ohne +, z. B. 4916212345678
     number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "",
-    orderText: "Hi Lean's 👋 Ich möchte gerne bestellen.",
   },
   siteUrl:
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -28,7 +31,29 @@ export const business = {
         : "http://localhost:3000"),
 } as const;
 
-export function whatsappLink(text: string = business.whatsapp.orderText) {
+const weekdayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+/**
+ * Vorausgefüllte Bestellnachricht für den WhatsApp-Button: Menü mit Preisen zum Ausfüllen, damit der
+ * Kunde nicht zwischen Website und Chat wechseln muss. Preise und Zeiten kommen aus menu/schedule.
+ * Bewusst ohne Emojis: Die Weiterleitung von wa.me auf WhatsApp Web zerlegt sie teils zu "�".
+ */
+export function whatsappOrderTemplate() {
+  const days = schedule.deliveryWeekdays.map((d) => weekdayNames[d - 1]).join("/");
+  const hours = `${schedule.windows[0].start}–${schedule.windows.at(-1)!.end}`;
+  return [
+    "Hi Lean's, ich möchte bestellen:",
+    "",
+    ...menus.map((m) => `${m.name} (${formatEuro(m.priceCents)}): `),
+    `Extras – ${sides.map((s) => `${s.name} ${formatEuro(s.priceCents)}`).join(", ")}: `,
+    "",
+    `Liefertag + Uhrzeit (${days}, ${hours} Uhr): `,
+    "Name: ",
+    `Adresse (${deliveryArea.postalCodes.join("/")} ${deliveryArea.label.split(",")[0]}): `,
+  ].join("\n");
+}
+
+export function whatsappLink(text: string = whatsappOrderTemplate()) {
   if (!business.whatsapp.number) return null;
   return `https://wa.me/${business.whatsapp.number}?text=${encodeURIComponent(text)}`;
 }

@@ -51,7 +51,7 @@ async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token
         <h1>Nicht gefunden</h1>
         <p className="lead">Diesen Link kennen wir nicht. Schreib uns kurz auf WhatsApp, dann schauen wir nach.</p>
         <div className="status-actions">
-          <WhatsAppButton label="WhatsApp schreiben" />
+          <WhatsAppButton label="WhatsApp schreiben" text="Hi Lean's, mein Verfolgungslink funktioniert nicht: " />
         </div>
       </>
     );

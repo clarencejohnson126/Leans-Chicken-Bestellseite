@@ -117,3 +117,16 @@ describe("Eingabevalidierung", () => {
     expect(orderRequestSchema.safeParse({ ...valid, acceptTerms: false }).success).toBe(false);
   });
 });
+
+describe("WhatsApp-Bestellvorlage", () => {
+  it("listet alle Menüs und Extras mit aktuellen Preisen", async () => {
+    const { whatsappOrderTemplate } = await import("@/config/business");
+    const text = whatsappOrderTemplate().replace(/\u00a0/g, " ");
+    expect(text).toContain("Basic (8,00 €): ");
+    expect(text).toContain("Family Pack (16,00 €): ");
+    expect(text).toContain("Worcestershire Sauce 1,50 €");
+    expect(text).toContain("Mo/Mi/Do, 11:30–14:00 Uhr");
+    expect(text).toContain("Adresse (68309 FRANKLIN): ");
+    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+});
