@@ -8,14 +8,21 @@ export const business = {
   shortName: "LEAN'S",
   tagline: "Crispy Chicken. Mit dem Rad zu dir.",
   area: "FRANKLIN, Mannheim",
+  // Lean's Crispy Chicken ist ein Angebot von Johnson Services (Inhaber Clarence Johnson).
   operator: {
     name: "Clarence Johnson",
-    // TODO vor Go-Live: ladungsfähige Anschrift für Impressum ergänzen.
-    street: "",
+    company: "Johnson Services",
+    street: "George-Washington-Straße 219",
     city: "68309 Mannheim",
+    // Kundenkontakt (Mails, Stripe, Website)
     email: "hallo@leanchicken.de",
     phone: "+49 179 1778957",
+    // Rechtliche Angaben (Impressum, Datenschutz)
+    legalEmail: "info@johnson-services.de",
+    vatId: "DE45212565",
+    taxOffice: "Finanzamt Mannheim-Neckarstadt",
   },
+  websiteBy: { name: "rebelzai.com", url: "https://rebelzai.com" },
   // Kleinunternehmer nach § 19 UStG: keine Umsatzsteuer ausweisen.
   smallBusiness: true,
   whatsapp: {

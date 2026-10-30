@@ -49,7 +49,8 @@ function card(content: string) {
 
 function layout({ preheader, title, body }: { preheader: string; title: string; body: string }) {
   const site = business.siteUrl;
-  const address = [business.operator.name, business.operator.street, business.operator.city].filter(Boolean).join(" · ");
+  const { operator } = business;
+  const address = `Ein Unternehmen von ${operator.company} · ${operator.name} · ${operator.street} · ${operator.city}`;
   const wa = whatsappLink("Hi Lean's, ");
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escape(title)}</title></head>
 <body style="margin:0;padding:0;background:#efebe3;font-family:${font};color:${color.text}">

@@ -14,8 +14,8 @@ export default function PrivacyPage() {
 
       <h2>Verantwortlicher</h2>
       <p>
-        {operator.name}, {operator.street || "[Anschrift ergänzen]"}, {operator.city}. E-Mail:{" "}
-        <a href={`mailto:${operator.email}`}>{operator.email}</a>
+        {operator.name}, {operator.company}, {operator.street}, {operator.city}. E-Mail:{" "}
+        <a href={`mailto:${operator.legalEmail}`}>{operator.legalEmail}</a>
       </p>
 
       <h2>Welche Daten wir verarbeiten</h2>
