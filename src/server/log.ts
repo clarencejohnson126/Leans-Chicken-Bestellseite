@@ -14,7 +14,9 @@ export type LogEvent =
   | "notification_failed"
   | "fulfillment_status_changed"
   | "refund_created"
-  | "refund_failed";
+  | "refund_failed"
+  | "survey_submitted"
+  | "survey_failed";
 
 /** Strukturiertes JSON-Logging, in Vercel-Logs filterbar nach `event`. Keine Kundendaten loggen. */
 export function log(event: LogEvent, data: Record<string, unknown> = {}) {

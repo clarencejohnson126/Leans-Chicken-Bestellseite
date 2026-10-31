@@ -39,6 +39,15 @@ export const business = {
         : "http://localhost:3000"),
 } as const;
 
+// Pop-up-Testlauf: begrenzter Zeitraum, in dem wir den Bedarf auf FRANKLIN testen.
+export const pilot = {
+  label: "Pop-up Kitchen",
+  endsOn: "2026-12-18",
+  endLabel: "18. Dezember",
+  endShort: "18.12.",
+  surveyPath: "/umfrage",
+} as const;
+
 const weekdayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
 /**

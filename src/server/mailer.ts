@@ -1,7 +1,9 @@
 import "server-only";
-import { business, taxNote, trackingUrl, whatsappLink } from "@/config/business";
+import { business, pilot, taxNote, trackingUrl, whatsappLink } from "@/config/business";
+import { surveyQuestions } from "@/config/survey";
 import { formatEuro, formatWindow } from "@/lib/format";
 import { formatDay } from "@/lib/time";
+import type { SurveyResponse } from "@/lib/survey";
 import type { OrderSummary } from "@/server/ports";
 
 // E-Mails über die Resend-REST-API (ohne SDK): Bestellbestätigung mit Verfolgungslink an den Kunden,
@@ -107,17 +109,18 @@ ${orderDetails(order)}
 ${itemsTable(order)}
 <h2 style="margin:32px 0 6px;font-size:18px;color:${color.black}">Live verfolgen</h2>
 ${paragraph(`Über den Button siehst du jederzeit, ob dein Essen in der Fritteuse ist oder schon unterwegs zu dir, ${firstName}.`)}
-${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}`,
+${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}
+${card(`<strong>Du bist beim Pop-up-Testlauf dabei.</strong> Bis ${pilot.endLabel} testen wir, wann FRANKLIN Lust auf Lean's hat. Sag uns in 30 Sekunden, wann du uns öfter hättest: <a href="${business.siteUrl}${pilot.surveyPath}" style="color:${color.red};font-weight:bold">zur Umfrage</a>`)}`,
     }),
   };
 }
 
 export function onTheWayMail(order: OrderSummary) {
   return {
-    subject: `Dein Chicken ist unterwegs 🚲 (${order.orderNumber})`,
+    subject: `Dein Chicken ist unterwegs (${order.orderNumber})`,
     html: layout({
       preheader: `Lean ist losgefahren und gleich bei dir in der ${order.street}.`,
-      title: "Dein Chicken ist unterwegs! 🚲",
+      title: "Dein Chicken ist unterwegs!",
       body: `${paragraph(`Lean ist gerade mit deiner Bestellung <strong>${order.orderNumber}</strong> losgefahren und gleich bei dir in der ${escape(order.street)}. Halt schon mal die Tür bereit.`)}
 ${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}`,
     }),
@@ -135,6 +138,25 @@ ${orderDetails(order)}
 ${itemsTable(order)}
 ${order.customerNote ? card(`<em>„${escape(order.customerNote)}“</em>`) : ""}
 ${button(`${business.siteUrl}/admin?tag=${order.deliveryDate}`, "Im Dashboard öffnen")}`,
+    }),
+  };
+}
+
+export function surveyMail(response: SurveyResponse) {
+  const answers = surveyQuestions
+    .map((q) => {
+      const picked = q.options.filter((o) => response.answers[q.id]?.includes(o.id)).map((o) => o.label);
+      return picked.length ? row(escape(q.label), escape(picked.join(", "))) : "";
+    })
+    .join("");
+  return {
+    subject: "Neuer Tipp aus der Testlauf-Umfrage",
+    html: layout({
+      preheader: response.tip.slice(0, 90),
+      title: "Neuer Tipp aus der Umfrage",
+      body: `${card(`<em>„${escape(response.tip)}“</em>`)}
+${answers ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0">${answers}</table>` : ""}
+${button(`${business.siteUrl}/admin/umfrage`, "Alle Antworten ansehen")}`,
     }),
   };
 }
@@ -160,6 +182,12 @@ export function createResendMailer(config: MailerConfig) {
     },
     notification: config.notifyTo
       ? async (order: OrderSummary) => send(config.notifyTo!, notificationMail(order), `notification_${order.id}`)
+      : undefined,
+    /** Tipp aus der Umfrage an Lean. Antworten ohne Freitext landen nur in der Auswertung. */
+    surveyTip: config.notifyTo
+      ? async (id: string, response: SurveyResponse) => {
+          if (response.tip) await send(config.notifyTo!, surveyMail(response), `survey_${id}`);
+        }
       : undefined,
     async onTheWay(order: OrderSummary) {
       if (order.customerEmail) await send(order.customerEmail, onTheWayMail(order), `on_the_way_${order.id}`);

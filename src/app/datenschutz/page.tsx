@@ -26,6 +26,15 @@ export default function PrivacyPage() {
       </p>
       <p>Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).</p>
 
+      <h2>Umfrage zum Testlauf</h2>
+      <p>
+        Die Umfrage ist anonym. Wir speichern nur deine Antworten, einen freiwilligen Tipp und den
+        Zeitpunkt, aber keinen Namen, keine Kontaktdaten und keine IP-Adresse. Schreib bitte keine
+        persönlichen Daten in das Tipp-Feld. Tipps leiten wir per E-Mail an unser Postfach weiter.
+        Rechtsgrundlage ist unser berechtigtes Interesse, das Angebot zu verbessern (Art. 6 Abs. 1
+        lit. f DSGVO).
+      </p>
+
       <h2>Eingesetzte Dienstleister</h2>
       <ul>
         <li>Vercel Inc. – Hosting der Website (Server-Logs mit IP-Adresse).</li>

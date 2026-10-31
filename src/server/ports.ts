@@ -1,4 +1,5 @@
 import type { PricedLine } from "@/lib/pricing";
+import type { SurveyResponse } from "@/lib/survey";
 import type { Slot } from "@/lib/slots";
 
 // Schnittstellen zu den externen Diensten. Der Order-Service kennt nur diese Typen;
@@ -155,4 +156,10 @@ export interface AdminStore {
 /** Öffentliche Bestellverfolgung. Liefert nur, was der Kunde über den Link sehen darf. */
 export interface TrackingStore {
   findByTrackingToken(token: string): Promise<AdminOrder | null>;
+}
+
+/** Anonyme Antworten aus der Testlauf-Umfrage. */
+export interface SurveyStore {
+  saveSurveyResponse(response: SurveyResponse): Promise<{ id: string }>;
+  surveyResponses(): Promise<(SurveyResponse & { id: string; createdAt: string })[]>;
 }

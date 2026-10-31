@@ -5,9 +5,10 @@ import { createAfterPayment, type AfterPayment, type OrderSink } from "@/server/
 import { createSheetsClient, normalizePrivateKey, type SheetsClient } from "@/server/google-sheets";
 import { log } from "@/server/log";
 import { createResendMailer, type Mailer } from "@/server/mailer";
-import type { AdminStore, OrderDeps, OrderStore, PaymentLedger, TrackingStore } from "@/server/ports";
+import type { SurveyResponse } from "@/lib/survey";
+import type { AdminStore, OrderDeps, OrderStore, PaymentLedger, SurveyStore, TrackingStore } from "@/server/ports";
 import { createStripePayments } from "@/server/stripe-payments";
-import { createAdminStore, createSupabaseClient, createSupabaseStore } from "@/server/supabase-store";
+import { createAdminStore, createSupabaseClient, createSupabaseStore, createSurveyStore } from "@/server/supabase-store";
 
 // Baut die Adapter aus den Environment Variables. Fehlt etwas, liefern die Loader null und die
 // Website fällt sauber auf "Bestell per WhatsApp" zurück, statt mit halber Konfiguration zu laufen.
@@ -20,6 +21,7 @@ type Integrations = {
   afterPayment: AfterPayment;
   admin: AdminStore & TrackingStore;
   adminOps: AdminOps;
+  survey: { store: SurveyStore; notifyTip?: (id: string, response: SurveyResponse) => Promise<void> };
 };
 
 /** Google-Sheet-Spiegel, sofern Service Account und Sheet-ID konfiguriert sind. */
@@ -76,6 +78,7 @@ function build(): Integrations | null {
       onTheWay: mail?.onTheWay,
       log,
     }),
+    survey: { store: createSurveyStore(db), notifyTip: mail?.surveyTip },
   };
 }
 
@@ -108,4 +111,9 @@ export function loadAdminOps(): AdminOps | null {
 
 export function loadTrackingStore(): TrackingStore | null {
   return integrations()?.admin ?? null;
+}
+
+/** Speicher und Tipp-Benachrichtigung für die Testlauf-Umfrage. */
+export function loadSurvey(): Integrations["survey"] | null {
+  return integrations()?.survey ?? null;
 }

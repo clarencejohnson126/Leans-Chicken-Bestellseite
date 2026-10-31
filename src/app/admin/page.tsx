@@ -134,6 +134,9 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
           <Link href="/admin/whatsapp" className="btn btn-whatsapp">
             + WhatsApp-Bestellung
           </Link>
+          <Link href="/admin/umfrage" className="btn btn-ghost">
+            Umfrage
+          </Link>
           <form action={setPausedAction}>
             <input type="hidden" name="paused" value={paused ? "false" : "true"} />
             <button type="submit" className={`btn ${paused ? "btn-red" : "btn-ghost"}`}>

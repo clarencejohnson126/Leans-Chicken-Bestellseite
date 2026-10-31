@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { pilot } from "@/config/business";
 import { formatWindow } from "@/lib/format";
 import { formatDay } from "@/lib/time";
 import { loadTrackingStore } from "@/server/integrations";
@@ -102,6 +104,12 @@ async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token
         {order.items.map((i) => `${i.quantity}× ${i.name}`).join(" · ")}
       </p>
       {!finished && <p className="hint">Die Seite aktualisiert sich automatisch.</p>}
+      {order.fulfillmentStatus === "DELIVERED" && (
+        <p className="notice" style={{ marginTop: 20 }}>
+          Wie war&apos;s? Wir sind im {pilot.label}-Testlauf bis {pilot.endLabel}.{" "}
+          <Link href={pilot.surveyPath}>In 30 Sekunden sagen, wann du uns öfter hättest →</Link>
+        </p>
+      )}
       <div className="status-actions">
         <WhatsAppButton label="Frage zur Bestellung" text={`Hi Lean's, zu meiner Bestellung ${order.orderNumber}: `} />
       </div>

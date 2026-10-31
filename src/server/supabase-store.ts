@@ -14,6 +14,7 @@ import type {
   AdminStore,
   FulfillmentStatus,
   TrackingStore,
+  SurveyStore,
 } from "@/server/ports";
 
 const syncColumn: Record<SyncTarget, string> = {
@@ -383,6 +384,30 @@ export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): A
         .upsert({ key: "orders_paused", value: paused, updated_at: new Date().toISOString() });
       if (error) fail("admin.setOrdersPaused", error);
       console.log(JSON.stringify({ event: "orders_paused_changed", paused, actor, ts: new Date().toISOString() }));
+    },
+  };
+}
+
+export function createSurveyStore(db: ReturnType<typeof createSupabaseClient>): SurveyStore {
+  return {
+    async saveSurveyResponse({ answers, tip }) {
+      const { data, error } = await db.from("survey_responses").insert({ answers, tip }).select("id").single();
+      if (error || !data) fail("survey_responses.insert", error);
+      return { id: data.id as string };
+    },
+    async surveyResponses() {
+      const { data, error } = await db
+        .from("survey_responses")
+        .select("id, answers, tip, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) fail("survey_responses.select", error);
+      return (data ?? []).map((row) => ({
+        id: row.id as string,
+        answers: row.answers as Record<string, string[]>,
+        tip: row.tip as string,
+        createdAt: row.created_at as string,
+      }));
     },
   };
 }

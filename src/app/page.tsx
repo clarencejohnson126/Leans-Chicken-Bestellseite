@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { business, taxNote } from "@/config/business";
+import { business, pilot, taxNote } from "@/config/business";
 import { allergens, menus, orderRules, sides } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
@@ -84,7 +84,7 @@ export default function Home() {
       <section className="wrap hero">
         <div>
           <p className="eyebrow">
-            Lieferung auf {deliveryArea.label} · {deliveryDays} mittags
+            {pilot.label} · Testlauf bis {pilot.endLabel}
           </p>
           <h1>
             Crispy Chicken.
@@ -153,6 +153,26 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* 1b · Testlauf */}
+      <section id="testlauf" className="wrap section pilot">
+        <div>
+          <p className="eyebrow">{pilot.label} · Testlauf</p>
+          <h2>Warum nur drei Tage die Woche?</h2>
+          <p className="lead">
+            Nach dem ausverkauften Stand auf dem LOOPFEST testen wir bis zum {pilot.endLabel}, ob FRANKLIN Lust auf
+            Lean&apos;s hat. Deshalb liefern wir erst mal nur montags, mittwochs und donnerstags mittags und braten
+            jede Portion frisch für dein Zeitfenster. Läuft&apos;s, kommen mehr Tage dazu. Welche, entscheidest du mit.
+          </p>
+        </div>
+        <div className="pilot-cta">
+          <strong>Wann hättest du gern Lean&apos;s?</strong>
+          <span>4 kurze Fragen, 30 Sekunden, anonym.</span>
+          <Link href={pilot.surveyPath} className="btn btn-red">
+            Zur Umfrage →
+          </Link>
+        </div>
+      </section>
 
       {/* 2 · Problem */}
       <section className="wrap section">
@@ -377,8 +397,9 @@ export default function Home() {
             Chicken, das wir selbst am liebsten essen, so frisch wie möglich zu den Nachbarn bringen.
           </p>
           <p className="lead">
-            Nach dem ausverkauften Stand auf dem LOOPFEST testen wir jetzt die Lieferung. Jede
-            Bestellung hilft uns, daraus etwas Festes auf FRANKLIN zu machen.
+            Jetzt testen wir die Lieferung, bis zum {pilot.endLabel}. Jede Bestellung und jede Stimme in
+            der <Link href={pilot.surveyPath}>Umfrage</Link> hilft uns, daraus etwas Festes auf FRANKLIN zu
+            machen.
           </p>
         </div>
       </section>
