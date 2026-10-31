@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { business, taxNote } from "@/config/business";
+import { business, pickupLocation, taxNote } from "@/config/business";
 import { orderRules } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
@@ -28,8 +28,8 @@ export default function TermsPage() {
       <h2>3. Preise und Mindestbestellwert</h2>
       <p>
         Es gelten die zum Zeitpunkt der Bestellung angezeigten Preise. {taxNote} Der
-        Mindestbestellwert beträgt {formatEuro(orderRules.minOrderCents)}. Eine Liefergebühr fällt
-        nicht an.
+        Mindestbestellwert für die Lieferung beträgt {formatEuro(orderRules.minOrderCents)}. Eine
+        Liefergebühr fällt nicht an. Bei Abholung gibt es keinen Mindestbestellwert.
       </p>
 
       <h2>4. Lieferung</h2>
@@ -37,6 +37,10 @@ export default function TermsPage() {
         Wir liefern ausschließlich nach {deliveryArea.label} im gewählten Lieferfenster. Bestellungen
         sind bis {schedule.orderLeadMinutes} Minuten vor Beginn des Lieferfensters möglich. Bitte sei
         im Lieferfenster unter der angegebenen Adresse und Mobilnummer erreichbar.
+      </p>
+      <p>
+        Alternativ kannst du deine Bestellung im gewählten Zeitfenster selbst abholen: {pickupLocation.street},{" "}
+        {pickupLocation.city}. Bitte hol sie innerhalb des Zeitfensters ab, damit sie frisch und warm ist.
       </p>
 
       <h2>5. Zahlung</h2>

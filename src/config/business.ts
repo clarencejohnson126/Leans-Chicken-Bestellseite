@@ -39,6 +39,12 @@ export const business = {
         : "http://localhost:3000"),
 } as const;
 
+// Abholung: gleiche Zeitfenster und Fritteusen-Kapazität wie die Lieferung.
+export const pickupLocation = {
+  street: business.operator.street,
+  city: business.operator.city,
+} as const;
+
 // Pop-up-Testlauf: begrenzter Zeitraum, in dem wir den Bedarf auf FRANKLIN testen.
 export const pilot = {
   label: "Pop-up Kitchen",

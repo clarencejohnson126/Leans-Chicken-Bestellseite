@@ -1,7 +1,6 @@
-import { orderRules } from "@/config/menu";
 import { schedule } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
-import { priceCart } from "@/lib/pricing";
+import { minOrderCents, priceCart } from "@/lib/pricing";
 import {
   isSlotOpen,
   isWithinHorizon,
@@ -50,13 +49,13 @@ export async function createOrder(
     };
   }
 
-  const cart = priceCart(request.items);
+  const cart = priceCart(request.items, request.fulfillment);
   if (!cart.meetsMinimum) {
     log("order_rejected", { reason: "below_minimum", totalCents: cart.totalCents });
     return {
       ok: false,
       code: "below_minimum",
-      message: `Der Mindestbestellwert beträgt ${formatEuro(orderRules.minOrderCents)}.`,
+      message: `Der Mindestbestellwert für die Lieferung beträgt ${formatEuro(minOrderCents(request.fulfillment))}. Abholen geht auch ohne.`,
     };
   }
 
@@ -64,6 +63,7 @@ export async function createOrder(
 
   const created = await deps.store.createPendingOrder({
     source,
+    fulfillment: request.fulfillment,
     customer: request.customer,
     slot: { id: slot.id, date: slot.date, start: slot.start, end: slot.end },
     note: request.note,
@@ -93,7 +93,13 @@ export async function createOrder(
   }
 
   const order = created.order;
-  log("order_created", { orderId: order.id, orderNumber: order.orderNumber, source, slotId: slot.id });
+  log("order_created", {
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    source,
+    fulfillment: request.fulfillment,
+    slotId: slot.id,
+  });
 
   try {
     const checkout = await deps.payments.createCheckout(order);

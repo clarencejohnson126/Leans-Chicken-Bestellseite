@@ -87,6 +87,20 @@ describe("createOrder", () => {
     expect(result).toMatchObject({ ok: false, code: "below_minimum" });
   });
 
+  it("nimmt Abholung ohne Mindestbestellwert und ohne Adresse an", async () => {
+    const d = deps();
+    const pickup = orderRequestSchema.parse({
+      items: { basic: 1 },
+      fulfillment: "pickup",
+      slotId: "2026-10-28_12:00",
+      customer: { name: "Max", phone: "0162 1234567", street: "Irgendwo 1" },
+      acceptTerms: true,
+    });
+    const result = await createOrder(pickup, "website", d, now, noop);
+    expect(result).toMatchObject({ ok: true });
+    expect(d.store.orders[0]).toMatchObject({ fulfillment: "pickup", customer: { street: "", postalCode: "" } });
+  });
+
   it("lehnt Fenster nach Bestellschluss ab", async () => {
     const late = new Date("2026-10-28T10:15:00Z"); // 11:15 Berlin, Schluss für 12:00 war 11:00
     const result = await createOrder(request({ "family-pack": 2 }), "website", deps(), late, noop);

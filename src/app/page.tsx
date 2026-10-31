@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { business, pilot, taxNote } from "@/config/business";
+import { business, pickupLocation, pilot, taxNote } from "@/config/business";
 import { allergens, menus, orderRules, sides } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
@@ -105,6 +105,9 @@ export default function Home() {
             </span>
             <span className="chip">
               Mindestbestellwert <b>{formatEuro(orderRules.minOrderCents)}</b>
+            </span>
+            <span className="chip">
+              Auch <b>zum Abholen</b>
             </span>
           </div>
           <div className="hero-actions">
@@ -432,6 +435,14 @@ export default function Home() {
             <p>
               Auf ganz {deliveryArea.label} (PLZ {deliveryArea.postalCodes.join(", ")}). Gib einfach
               deine Adresse und, wenn nötig, Firma, Etage oder Klingel an.
+            </p>
+          </details>
+          <details>
+            <summary>Kann ich auch abholen?</summary>
+            <p>
+              Ja. Wähl beim Bestellen „Abholung“ und hol dein Chicken in deinem Zeitfenster in der{" "}
+              {pickupLocation.street}, {pickupLocation.city} ab. Bei Abholung gibt es keinen
+              Mindestbestellwert, und wir schicken dir eine Mail, sobald alles bereitliegt.
             </p>
           </details>
           <details>

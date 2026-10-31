@@ -45,6 +45,19 @@ const nextStep: Partial<Record<FulfillmentStatus, { to: FulfillmentStatus; label
   OUT_FOR_DELIVERY: { to: "DELIVERED", label: "Geliefert" },
 };
 
+// Abholung: ohne "Unterwegs". "Fertig" schickt dem Kunden die Abholbereit-Mail.
+const nextPickupStep: Partial<Record<FulfillmentStatus, { to: FulfillmentStatus; label: string }>> = {
+  NEW: { to: "PREP", label: "Zubereiten" },
+  PREP: { to: "READY", label: "Abholbereit" },
+  READY: { to: "DELIVERED", label: "Abgeholt" },
+};
+
+function statusText(o: AdminOrder) {
+  if (o.fulfillment === "pickup" && o.fulfillmentStatus === "READY") return "Abholbereit";
+  if (o.fulfillment === "pickup" && o.fulfillmentStatus === "DELIVERED") return "Abgeholt";
+  return statusLabel[o.fulfillmentStatus];
+}
+
 const paymentLabel: Partial<Record<AdminOrder["paymentStatus"], string>> = {
   pending: "Zahlung offen",
   processing: "SEPA eingereicht",
@@ -206,18 +219,22 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
 }
 
 function OrderCard({ order: o }: { order: AdminOrder }) {
-  const step = nextStep[o.fulfillmentStatus];
+  const pickup = o.fulfillment === "pickup";
+  const step = (pickup ? nextPickupStep : nextStep)[o.fulfillmentStatus];
   const address = `${o.street}, ${o.postalCode} Mannheim`;
   const firstName = o.customerName.split(" ")[0];
   const tracking = trackingUrl(o.trackingToken);
   const awaitingPayment = o.paymentStatus === "pending" && o.checkoutUrl;
   const paymentText = `Hi ${firstName}, hier kannst du deine Bestellung ${o.orderNumber} bei ${business.name} bezahlen (${formatEuro(o.totalCents)}): ${o.checkoutUrl}`;
-  const trackingText = `Hi ${firstName}, hier siehst du live, wo deine Bestellung ${o.orderNumber} gerade ist: ${tracking}`;
+  const trackingText = pickup
+    ? `Hi ${firstName}, hier siehst du, wann deine Bestellung ${o.orderNumber} abholbereit ist: ${tracking}`
+    : `Hi ${firstName}, hier siehst du live, wo deine Bestellung ${o.orderNumber} gerade ist: ${tracking}`;
   return (
     <li className={`admin-order status-${o.fulfillmentStatus.toLowerCase()} ${isActive(o) ? "" : "inactive"}`}>
       <div className="admin-order-head">
         <strong>{o.orderNumber}</strong>
-        <span className="admin-badge">{statusLabel[o.fulfillmentStatus]}</span>
+        <span className="admin-badge">{statusText(o)}</span>
+        {pickup && <span className="admin-badge pickup">Abholung</span>}
         {paymentLabel[o.paymentStatus] && (
           <span className={`admin-badge pay-${o.paymentStatus}`}>{paymentLabel[o.paymentStatus]}</span>
         )}
@@ -229,10 +246,16 @@ function OrderCard({ order: o }: { order: AdminOrder }) {
       <p className="admin-order-customer">
         {o.customerName}
         {o.company && ` (${o.company})`} ·{" "}
-        <a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer">
-          {o.street}
-        </a>
-        {o.addressNote && <> · {o.addressNote}</>}
+        {pickup ? (
+          <b>holt ab</b>
+        ) : (
+          <>
+            <a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer">
+              {o.street}
+            </a>
+            {o.addressNote && <> · {o.addressNote}</>}
+          </>
+        )}
       </p>
       {o.customerNote && <p className="admin-order-note">„{o.customerNote}“</p>}
       <div className="admin-order-actions">

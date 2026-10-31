@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { pickupLocation } from "@/config/business";
 import { formatEuro, formatWindow } from "@/lib/format";
 import { formatDay } from "@/lib/time";
 import { loadPaymentLedger } from "@/server/integrations";
@@ -25,11 +26,15 @@ export default function ThanksPage({ searchParams }: PageProps<"/bestellung/dank
   );
 }
 
-const statusText: Partial<Record<OrderSummary["paymentStatus"], string>> = {
-  paid: "Bezahlt. Wir liefern in deinem Zeitfenster.",
-  processing: "SEPA-Lastschrift eingereicht. Wir liefern wie geplant, die Abbuchung folgt in den nächsten Tagen.",
-  pending: "Deine Zahlung wird gerade bestätigt. Das dauert meist nur ein paar Sekunden – lade die Seite gleich neu.",
-};
+function statusText(order: OrderSummary) {
+  const plan = order.fulfillment === "pickup" ? "Deine Bestellung liegt in deinem Zeitfenster bereit." : "Wir liefern in deinem Zeitfenster.";
+  if (order.paymentStatus === "paid") return `Bezahlt. ${plan}`;
+  if (order.paymentStatus === "processing") return `SEPA-Lastschrift eingereicht. ${plan} Die Abbuchung folgt in den nächsten Tagen.`;
+  if (order.paymentStatus === "pending") {
+    return "Deine Zahlung wird gerade bestätigt. Das dauert meist nur ein paar Sekunden – lade die Seite gleich neu.";
+  }
+  return "Bei deiner Zahlung gab es ein Problem. Schreib uns kurz auf WhatsApp.";
+}
 
 async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke">, "searchParams">) {
   const { session_id: sessionId } = await searchParams;
@@ -43,17 +48,19 @@ async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke"
     <>
       {order ? (
         <>
-          <p className="lead">{statusText[order.paymentStatus] ?? "Bei deiner Zahlung gab es ein Problem. Schreib uns kurz auf WhatsApp."}</p>
+          <p className="lead">{statusText(order)}</p>
           <dl className="order-summary">
             <dt>Bestellnummer</dt>
             <dd>
               <strong>{order.orderNumber}</strong>
             </dd>
-            <dt>Lieferung</dt>
+            <dt>{order.fulfillment === "pickup" ? "Abholung" : "Lieferung"}</dt>
             <dd>
               {formatDay(order.deliveryDate)}, {formatWindow(order.slotStart, order.slotEnd)}
               <br />
-              {order.street}, {order.postalCode}
+              {order.fulfillment === "pickup"
+                ? `${pickupLocation.street}, ${pickupLocation.city}`
+                : `${order.street}, ${order.postalCode}`}
             </dd>
             <dt>Bestellt</dt>
             <dd>
@@ -71,7 +78,7 @@ async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke"
         </>
       ) : (
         <p className="lead">
-          Du bekommst deine Zahlungsbestätigung per E-Mail. Wir liefern in deinem gewählten Zeitfenster.
+          Du bekommst deine Zahlungsbestätigung per E-Mail. Deine Bestellung ist in deinem gewählten Zeitfenster fertig.
         </p>
       )}
       <p className="lead">Änderungen? Schreib uns auf WhatsApp.</p>

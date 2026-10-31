@@ -51,24 +51,40 @@ export const customerSchema = z.object({
       return n;
     }),
   company: text(80).optional().default(""),
-  street: text(120).min(3, "Bitte gib Straße und Hausnummer an."),
-  postalCode: z
-    .string()
-    .trim()
-    .refine(
-      (v) => (deliveryArea.postalCodes as readonly string[]).includes(v),
-      `Wir liefern aktuell nur nach ${deliveryArea.label} (PLZ ${deliveryArea.postalCodes.join(", ")}).`,
-    ),
+  // Adresse wird nur bei Lieferung geprüft (siehe orderRequestSchema).
+  street: text(120).optional().default(""),
+  postalCode: z.string().trim().optional().default(""),
   addressNote: text(160).optional().default(""),
 });
 
-export const orderRequestSchema = z.object({
-  items: itemsSchema,
-  slotId: z.string().regex(/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}$/, "Bitte wähle eine Lieferzeit."),
-  customer: customerSchema,
-  note: text(300).optional().default(""),
-  acceptTerms: z.literal(true, "Bitte bestätige AGB und Datenschutzerklärung."),
-});
+export const orderRequestSchema = z
+  .object({
+    items: itemsSchema,
+    fulfillment: z.enum(["delivery", "pickup"]).optional().default("delivery"),
+    slotId: z.string().regex(/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}$/, "Bitte wähle eine Zeit."),
+    customer: customerSchema,
+    note: text(300).optional().default(""),
+    acceptTerms: z.literal(true, "Bitte bestätige AGB und Datenschutzerklärung."),
+  })
+  .superRefine((order, ctx) => {
+    if (order.fulfillment !== "delivery") return;
+    if (order.customer.street.length < 3) {
+      ctx.addIssue({ code: "custom", path: ["customer", "street"], message: "Bitte gib Straße und Hausnummer an." });
+    }
+    if (!(deliveryArea.postalCodes as readonly string[]).includes(order.customer.postalCode)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["customer", "postalCode"],
+        message: `Wir liefern aktuell nur nach ${deliveryArea.label} (PLZ ${deliveryArea.postalCodes.join(", ")}). Abholen geht immer.`,
+      });
+    }
+  })
+  // Bei Abholung keine Adresse speichern, auch wenn das Formular noch eine enthält.
+  .transform((order) =>
+    order.fulfillment === "pickup"
+      ? { ...order, customer: { ...order.customer, street: "", postalCode: "", addressNote: "" } }
+      : order,
+  );
 
 export type OrderRequest = z.infer<typeof orderRequestSchema>;
 export type OrderRequestInput = z.input<typeof orderRequestSchema>;

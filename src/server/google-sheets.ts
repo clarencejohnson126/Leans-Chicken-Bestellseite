@@ -74,7 +74,7 @@ export function orderToRow(order: OrderSummary, receivedAt: Date): (string | num
     `'${order.customerPhone}`,
     order.customerEmail ?? "",
     order.company,
-    order.street,
+    order.fulfillment === "pickup" ? "ABHOLUNG" : order.street,
     order.postalCode,
     order.addressNote,
     order.items.map((i) => `${i.quantity}× ${i.name}`).join(", "),

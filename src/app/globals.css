@@ -1359,6 +1359,10 @@ h3 {
   font-size: 12px;
   font-weight: 700;
 }
+.admin-badge.pickup {
+  background: var(--yellow);
+  color: var(--black);
+}
 .admin-badge.pay-processing {
   background: #4aa3ff33;
 }
@@ -1766,4 +1770,18 @@ h3 {
 }
 .pilot .lead {
   margin-top: 14px;
+}
+.admin-fulfillment {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.fulfillment-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+.fulfillment-tabs .day-tab {
+  font-size: 16px;
 }

@@ -100,6 +100,15 @@ describe("Eingabevalidierung", () => {
     expect(r.success).toBe(false);
   });
 
+  it("verlangt bei Abholung keine Adresse auf FRANKLIN", () => {
+    const pickup = { ...valid, fulfillment: "pickup", customer: { name: "Max", phone: "0162 1234567" } };
+    expect(orderRequestSchema.safeParse(pickup).success).toBe(true);
+    const delivery = { ...pickup, fulfillment: "delivery" };
+    const r = orderRequestSchema.safeParse(delivery);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => i.path.join("."))).toEqual(["customer.street", "customer.postalCode"]);
+  });
+
   it("lehnt unbekannte Produkte und Preise aus dem Client ab", () => {
     const r = orderRequestSchema.safeParse({ ...valid, items: { "crunch-combo": 2, priceCents: 1 } });
     expect(r.success).toBe(false);

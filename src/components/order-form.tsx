@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { whatsappLink } from "@/config/business";
+import { pickupLocation, whatsappLink } from "@/config/business";
 import { menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
 import { formatEuro, formatWindow } from "@/lib/format";
-import { priceCart } from "@/lib/pricing";
+import { priceCart, type FulfillmentType } from "@/lib/pricing";
 import { orderRequestSchema, type OrderRequestInput } from "@/lib/validation";
 
 export type SlotOption = {
@@ -44,6 +44,7 @@ const emptyCustomer = {
 export function OrderForm({ days }: { days: DayOption[] }) {
   const firstOpenDay = days.find((d) => d.slots.some((s) => s.open && s.remainingStrips > 0));
   const [quantities, setQuantities] = useState<Partial<Record<ItemId, number>>>({});
+  const [fulfillment, setFulfillment] = useState<FulfillmentType>("delivery");
   const [day, setDay] = useState(firstOpenDay?.date ?? days[0]?.date ?? "");
   const [slotId, setSlotId] = useState("");
   const [customer, setCustomer] = useState(emptyCustomer);
@@ -53,7 +54,8 @@ export function OrderForm({ days }: { days: DayOption[] }) {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const cart = useMemo(() => priceCart(quantities), [quantities]);
+  const cart = useMemo(() => priceCart(quantities, fulfillment), [quantities, fulfillment]);
+  const pickup = fulfillment === "pickup";
   const selectedDay = days.find((d) => d.date === day);
   const selectedSlot = days.flatMap((d) => d.slots).find((s) => s.id === slotId);
   const slotTooSmall = selectedSlot ? selectedSlot.remainingStrips < cart.strips : false;
@@ -85,6 +87,7 @@ export function OrderForm({ days }: { days: DayOption[] }) {
     setNotice(null);
     const payload: OrderRequestInput = {
       items: quantities,
+      fulfillment,
       slotId,
       customer,
       note,
@@ -147,7 +150,13 @@ export function OrderForm({ days }: { days: DayOption[] }) {
           <div className="menu-grid">
             {menus.map((item) => (
               <div className="menu-card" key={item.id} data-selected={(quantities[item.id] ?? 0) > 0}>
-                <Image src={item.image} alt={`${item.name}: ${item.description}`} width={709} height={390} sizes="(min-width: 960px) 520px, 90vw" />
+                <Image
+                  src={item.image}
+                  alt={`${item.name}: ${item.description}`}
+                  width={709}
+                  height={390}
+                  sizes="(min-width: 960px) 520px, 90vw"
+                />
                 <div className="menu-card-body">
                   <div>
                     <h3>
@@ -183,18 +192,42 @@ export function OrderForm({ days }: { days: DayOption[] }) {
             </p>
           )}
           {cart.hasMenu && !cart.meetsMinimum && (
-            <p className="notice" style={{ marginTop: 14 }}>
-              Mindestbestellwert {formatEuro(orderRules.minOrderCents)}. Noch{" "}
-              {formatEuro(cart.missingCents)} bis zur Lieferung.
-            </p>
+            <div className="notice" style={{ marginTop: 14 }}>
+              <p>
+                Mindestbestellwert für die Lieferung {formatEuro(orderRules.minOrderCents)}. Noch{" "}
+                {formatEuro(cart.missingCents)} bis zur Lieferung, oder du holst ab, dann gibt es keinen
+                Mindestbestellwert.
+              </p>
+              <button type="button" className="btn btn-ghost" onClick={() => setFulfillment("pickup")}>
+                Lieber abholen
+              </button>
+            </div>
           )}
         </section>
 
         <section className="card span" aria-labelledby="step-time">
           <div className="card-title">
             <span>2</span>
-            <h2 id="step-time">Lieferzeit</h2>
+            <h2 id="step-time">Lieferung oder Abholung</h2>
           </div>
+          <div className="day-tabs fulfillment-tabs" role="group" aria-label="Lieferung oder Abholung">
+            <button type="button" className="day-tab" aria-pressed={!pickup} onClick={() => setFulfillment("delivery")}>
+              Lieferung
+              <small>gratis ab {formatEuro(orderRules.minOrderCents)}</small>
+            </button>
+            <button type="button" className="day-tab" aria-pressed={pickup} onClick={() => setFulfillment("pickup")}>
+              Abholung
+              <small>ohne Mindestbestellwert</small>
+            </button>
+          </div>
+          {pickup && (
+            <p className="hint" style={{ marginBottom: 14 }}>
+              Abholen bei uns:{" "}
+              <b>
+                {pickupLocation.street}, {pickupLocation.city}
+              </b>
+            </p>
+          )}
           {days.length === 0 ? (
             <p className="hint">Aktuell sind keine Liefertage geplant.</p>
           ) : (
@@ -253,12 +286,11 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               {errors.slotId && <p className="field-error">{errors.slotId}</p>}
               {slotTooSmall && (
                 <p className="notice" style={{ marginTop: 14 }}>
-                  Für deine Menge ist in diesem Fenster nicht mehr genug frei. Bitte wähle eine
-                  andere Zeit.
+                  Für deine Menge ist in diesem Fenster nicht mehr genug frei. Bitte wähle eine andere Zeit.
                 </p>
               )}
               <p className="hint" style={{ marginTop: 14 }}>
-                Bestellschluss jeweils 60 Minuten vor Beginn des Lieferfensters.
+                Bestellschluss jeweils 60 Minuten vor Beginn des Zeitfensters.
               </p>
             </>
           )}
@@ -267,9 +299,13 @@ export function OrderForm({ days }: { days: DayOption[] }) {
         <section className="card span" aria-labelledby="step-address">
           <div className="card-title">
             <span>3</span>
-            <h2 id="step-address">Lieferadresse &amp; Kontakt</h2>
+            <h2 id="step-address">{pickup ? "Kontakt" : "Lieferadresse & Kontakt"}</h2>
           </div>
-          <p className="hint">Wir liefern nur auf {deliveryArea.label}.</p>
+          <p className="hint">
+            {pickup
+              ? `Du holst ab: ${pickupLocation.street}, ${pickupLocation.city}.`
+              : `Wir liefern nur auf ${deliveryArea.label}.`}
+          </p>
           <Field label="Name" name="customer.name" errors={errors}>
             <input
               id="customer.name"
@@ -278,7 +314,7 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               onChange={(e) => updateCustomer("name", e.target.value)}
             />
           </Field>
-          <Field label="Mobilnummer" hint="für Rückfragen bei der Lieferung" name="customer.phone" errors={errors}>
+          <Field label="Mobilnummer" hint="für Rückfragen zur Bestellung" name="customer.phone" errors={errors}>
             <input
               id="customer.phone"
               type="tel"
@@ -289,50 +325,49 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               onChange={(e) => updateCustomer("phone", e.target.value)}
             />
           </Field>
-          <div className="field-row">
-            <Field label="Straße und Hausnummer" name="customer.street" errors={errors}>
-              <input
-                id="customer.street"
-                autoComplete="street-address"
-                value={customer.street}
-                onChange={(e) => updateCustomer("street", e.target.value)}
-              />
-            </Field>
-            <Field label="PLZ" name="customer.postalCode" errors={errors}>
-              <input
-                id="customer.postalCode"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                maxLength={5}
-                value={customer.postalCode}
-                onChange={(e) => updateCustomer("postalCode", e.target.value)}
-              />
-            </Field>
-          </div>
-          <div className="field-row">
-            <Field label="Firma / Gebäude" hint="optional" name="customer.company" errors={errors}>
-              <input
-                id="customer.company"
-                autoComplete="organization"
-                value={customer.company}
-                onChange={(e) => updateCustomer("company", e.target.value)}
-              />
-            </Field>
-            <Field label="Etage, Klingel" hint="optional" name="customer.addressNote" errors={errors}>
-              <input
-                id="customer.addressNote"
-                value={customer.addressNote}
-                onChange={(e) => updateCustomer("addressNote", e.target.value)}
-              />
-            </Field>
-          </div>
+          {!pickup && (
+            <>
+              <div className="field-row">
+                <Field label="Straße und Hausnummer" name="customer.street" errors={errors}>
+                  <input
+                    id="customer.street"
+                    autoComplete="street-address"
+                    value={customer.street}
+                    onChange={(e) => updateCustomer("street", e.target.value)}
+                  />
+                </Field>
+                <Field label="PLZ" name="customer.postalCode" errors={errors}>
+                  <input
+                    id="customer.postalCode"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={5}
+                    value={customer.postalCode}
+                    onChange={(e) => updateCustomer("postalCode", e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="field-row">
+                <Field label="Firma / Gebäude" hint="optional" name="customer.company" errors={errors}>
+                  <input
+                    id="customer.company"
+                    autoComplete="organization"
+                    value={customer.company}
+                    onChange={(e) => updateCustomer("company", e.target.value)}
+                  />
+                </Field>
+                <Field label="Etage, Klingel" hint="optional" name="customer.addressNote" errors={errors}>
+                  <input
+                    id="customer.addressNote"
+                    value={customer.addressNote}
+                    onChange={(e) => updateCustomer("addressNote", e.target.value)}
+                  />
+                </Field>
+              </div>
+            </>
+          )}
           <Field label="Anmerkung" hint="optional" name="note" errors={errors}>
-            <textarea
-              id="note"
-              maxLength={300}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
+            <textarea id="note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
 
           <label className="check" style={{ marginTop: 22 }}>
@@ -345,9 +380,15 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               }}
             />
             <span>
-              Ich akzeptiere die <Link href="/agb" target="_blank">AGB</Link> und habe die{" "}
-              <Link href="/datenschutz" target="_blank">Datenschutzerklärung</Link> gelesen. Bei
-              frisch zubereiteten Speisen besteht kein Widerrufsrecht.
+              Ich akzeptiere die{" "}
+              <Link href="/agb" target="_blank">
+                AGB
+              </Link>{" "}
+              und habe die{" "}
+              <Link href="/datenschutz" target="_blank">
+                Datenschutzerklärung
+              </Link>{" "}
+              gelesen. Bei frisch zubereiteten Speisen besteht kein Widerrufsrecht.
             </span>
           </label>
           {errors.acceptTerms && <p className="field-error">{errors.acceptTerms}</p>}
@@ -379,7 +420,7 @@ export function OrderForm({ days }: { days: DayOption[] }) {
           <div className="summary-total">
             <strong>{formatEuro(cart.totalCents)}</strong>
             <span>
-              {cart.strips} Strips · Lieferung gratis
+              {cart.strips} Strips · {pickup ? "Abholung" : "Lieferung gratis"}
             </span>
           </div>
           <button type="submit" className="btn btn-red" disabled={!canSubmit}>

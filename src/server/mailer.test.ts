@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { OrderSummary } from "@/server/ports";
 
 vi.mock("server-only", () => ({}));
-const { confirmationMail, notificationMail, onTheWayMail } = await import("@/server/mailer");
+const { confirmationMail, notificationMail, onTheWayMail, readyForPickupMail } = await import("@/server/mailer");
 
 const order: OrderSummary = {
   id: "order-1",
   orderNumber: "LEAN-1104-007",
   source: "website",
+  fulfillment: "delivery",
   paymentStatus: "paid",
   customerName: "Max <b>Müller</b>",
   customerPhone: "+4917612345678",
@@ -33,7 +34,11 @@ const order: OrderSummary = {
 };
 
 describe("E-Mails", () => {
-  const mails = { confirmation: confirmationMail(order), onTheWay: onTheWayMail(order), notification: notificationMail(order) };
+  const mails = {
+    confirmation: confirmationMail(order),
+    onTheWay: onTheWayMail(order),
+    notification: notificationMail(order),
+  };
 
   it("enthält Logo, Verfolgungslink und Bestelldaten", () => {
     const { html, subject } = mails.confirmation;
@@ -44,12 +49,23 @@ describe("E-Mails", () => {
     expect(html).toContain("Mittwoch, 4. November");
   });
 
+  it("nennt bei Abholung den Abholort statt einer Lieferadresse", () => {
+    const pickup = { ...order, fulfillment: "pickup" as const, street: "", postalCode: "", addressNote: "" };
+    const { html } = confirmationMail(pickup);
+    expect(html).toContain("Abholort");
+    expect(html).toContain("George-Washington-Straße 219");
+    expect(html).not.toContain(">Adresse<");
+    expect(notificationMail(pickup).subject).toContain("ABHOLUNG");
+    expect(readyForPickupMail(pickup).subject).toContain("abholbereit");
+  });
+
   it("maskiert Kundeneingaben", () => {
     for (const mail of Object.values(mails)) expect(mail.html).not.toContain("<b>Müller</b>");
   });
 
   // MAIL_PREVIEW_DIR=/pfad npx vitest run src/server/mailer.test.ts schreibt die Mails als HTML-Vorschau.
   it.runIf(process.env.MAIL_PREVIEW_DIR)("schreibt eine Vorschau", () => {
-    for (const [name, mail] of Object.entries(mails)) writeFileSync(join(process.env.MAIL_PREVIEW_DIR!, `${name}.html`), mail.html);
+    for (const [name, mail] of Object.entries(mails))
+      writeFileSync(join(process.env.MAIL_PREVIEW_DIR!, `${name}.html`), mail.html);
   });
 });

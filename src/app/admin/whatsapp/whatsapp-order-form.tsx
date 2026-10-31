@@ -3,11 +3,11 @@
 import { useActionState, useState } from "react";
 import { createWhatsAppOrderAction } from "@/app/admin/actions";
 import { CopyButton } from "@/components/copy-button";
-import { business, whatsappTo } from "@/config/business";
+import { business, pickupLocation, whatsappTo } from "@/config/business";
 import { catalog, type ItemId } from "@/config/menu";
 import { schedule, deliveryArea } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
-import { priceCart, type CartInput } from "@/lib/pricing";
+import { priceCart, type CartInput, type FulfillmentType } from "@/lib/pricing";
 
 export type AdminDayOption = {
   date: string;
@@ -15,10 +15,11 @@ export type AdminDayOption = {
   slots: { id: string; start: string; end: string; open: boolean; remainingStrips: number }[];
 };
 
-function paymentMessage(firstName: string, orderNumber: string, total: string, url: string) {
+function paymentMessage(firstName: string, orderNumber: string, total: string, url: string, pickup: boolean) {
   return [
     `Hi ${firstName}, danke für deine Bestellung bei ${business.name}!`,
     `Bestellung ${orderNumber} · ${total}`,
+    ...(pickup ? [`Abholung: ${pickupLocation.street}, ${pickupLocation.city}`] : []),
     `Hier kannst du bezahlen (Karte, Apple Pay, Google Pay oder SEPA): ${url}`,
     `Der Link ist ${schedule.whatsappHoldMinutes} Minuten gültig, so lange halten wir dir den Platz frei.`,
   ].join("\n");
@@ -27,12 +28,14 @@ function paymentMessage(firstName: string, orderNumber: string, total: string, u
 export function WhatsAppOrderForm({ days }: { days: AdminDayOption[] }) {
   const [state, action, pending] = useActionState(createWhatsAppOrderAction, null);
   const [cart, setCart] = useState<CartInput>({});
-  const preview = priceCart(cart);
+  const [fulfillment, setFulfillment] = useState<FulfillmentType>("delivery");
+  const pickup = fulfillment === "pickup";
+  const preview = priceCart(cart, fulfillment);
   const fields = state && !state.ok ? (state.fields ?? {}) : {};
   const error = (name: string) => fields[name] && <span className="field-error">{fields[name]}</span>;
 
   if (state?.ok) {
-    const message = paymentMessage(state.firstName, state.orderNumber, state.total, state.checkoutUrl);
+    const message = paymentMessage(state.firstName, state.orderNumber, state.total, state.checkoutUrl, state.pickup);
     return (
       <div className="admin-window">
         <h2>Bestellung {state.orderNumber} angelegt</h2>
@@ -82,12 +85,38 @@ export function WhatsAppOrderForm({ days }: { days: AdminDayOption[] }) {
           {preview.strips} Strips · <b>{formatEuro(preview.totalCents)}</b>
           {!preview.meetsMinimum &&
             preview.totalCents > 0 &&
-            ` · noch ${formatEuro(preview.missingCents)} bis zum Mindestbestellwert`}
+            ` · noch ${formatEuro(preview.missingCents)} bis zum Mindestbestellwert für Lieferung`}
         </p>
       </section>
 
       <section className="admin-window">
-        <h2>Lieferzeit</h2>
+        <h2>Lieferung oder Abholung</h2>
+        <div className="admin-fulfillment">
+          <label className="check">
+            <input
+              type="radio"
+              name="fulfillment"
+              value="delivery"
+              checked={!pickup}
+              onChange={() => setFulfillment("delivery")}
+            />
+            <span>Lieferung</span>
+          </label>
+          <label className="check">
+            <input
+              type="radio"
+              name="fulfillment"
+              value="pickup"
+              checked={pickup}
+              onChange={() => setFulfillment("pickup")}
+            />
+            <span>Abholung ({pickupLocation.street}), ohne Mindestbestellwert</span>
+          </label>
+        </div>
+      </section>
+
+      <section className="admin-window">
+        <h2>Zeitfenster</h2>
         <div className="field">
           <select name="slotId" required defaultValue="" aria-label="Lieferfenster">
             <option value="" disabled>
@@ -119,30 +148,45 @@ export function WhatsAppOrderForm({ days }: { days: AdminDayOption[] }) {
           <input id="wa-phone" name="phone" type="tel" required placeholder="0176 …" autoComplete="off" />
           {error("customer.phone")}
         </div>
-        <div className="field-row">
-          <div className="field">
-            <label htmlFor="wa-street">Straße und Hausnummer</label>
-            <input id="wa-street" name="street" required autoComplete="off" />
-            {error("customer.street")}
-          </div>
-          <div className="field">
-            <label htmlFor="wa-plz">PLZ</label>
-            <input id="wa-plz" name="postalCode" required defaultValue={deliveryArea.postalCodes[0]} inputMode="numeric" />
-            {error("customer.postalCode")}
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="wa-company">
-            Firma <small>optional</small>
-          </label>
-          <input id="wa-company" name="company" autoComplete="off" />
-        </div>
-        <div className="field">
-          <label htmlFor="wa-address-note">
-            Hinweis zur Adresse <small>optional</small>
-          </label>
-          <input id="wa-address-note" name="addressNote" placeholder="z. B. 3. OG, Klingel Müller" autoComplete="off" />
-        </div>
+        {!pickup && (
+          <>
+            <div className="field-row">
+              <div className="field">
+                <label htmlFor="wa-street">Straße und Hausnummer</label>
+                <input id="wa-street" name="street" required autoComplete="off" />
+                {error("customer.street")}
+              </div>
+              <div className="field">
+                <label htmlFor="wa-plz">PLZ</label>
+                <input
+                  id="wa-plz"
+                  name="postalCode"
+                  required
+                  defaultValue={deliveryArea.postalCodes[0]}
+                  inputMode="numeric"
+                />
+                {error("customer.postalCode")}
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="wa-company">
+                Firma <small>optional</small>
+              </label>
+              <input id="wa-company" name="company" autoComplete="off" />
+            </div>
+            <div className="field">
+              <label htmlFor="wa-address-note">
+                Hinweis zur Adresse <small>optional</small>
+              </label>
+              <input
+                id="wa-address-note"
+                name="addressNote"
+                placeholder="z. B. 3. OG, Klingel Müller"
+                autoComplete="off"
+              />
+            </div>
+          </>
+        )}
         <div className="field">
           <label htmlFor="wa-note">
             Notiz <small>optional</small>

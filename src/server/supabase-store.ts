@@ -39,6 +39,7 @@ type OrderRow = {
   id: string;
   order_number: string;
   source: OrderSummary["source"];
+  fulfillment_type: OrderSummary["fulfillment"];
   payment_status: PaymentStatus;
   customer_name: string;
   customer_phone: string;
@@ -59,13 +60,14 @@ type OrderRow = {
 };
 
 const orderColumns =
-  "id, order_number, source, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, tracking_token, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
+  "id, order_number, source, fulfillment_type, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, tracking_token, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
 
 function toSummary(row: OrderRow): OrderSummary {
   return {
     id: row.id,
     orderNumber: row.order_number,
     source: row.source,
+    fulfillment: row.fulfillment_type,
     paymentStatus: row.payment_status,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
@@ -121,6 +123,7 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
       const { data, error } = await db.rpc("create_pending_order", {
         p_order: {
           source: input.source,
+          fulfillment_type: input.fulfillment,
           customer_name: input.customer.name,
           customer_phone: input.customer.phone,
           company: input.customer.company,

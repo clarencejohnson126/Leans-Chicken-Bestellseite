@@ -24,12 +24,14 @@ export type AdminOpsDeps = {
   payments: PaymentProvider;
   sheet?: SheetStatusSync;
   onTheWay?: (order: OrderSummary) => Promise<void>;
+  /** Abholbestellungen: Mail, sobald die Bestellung auf "Fertig" steht. */
+  readyForPickup?: (order: OrderSummary) => Promise<void>;
   log: Logger;
 };
 
 export type RefundResult = { ok: true; order: AdminOrder } | { ok: false; message: string };
 
-export function createAdminOps({ store, payments, sheet, onTheWay, log }: AdminOpsDeps) {
+export function createAdminOps({ store, payments, sheet, onTheWay, readyForPickup, log }: AdminOpsDeps) {
   async function attempt(ok: AdminLogEvent, failed: AdminLogEvent, data: Record<string, unknown>, run: () => Promise<unknown>) {
     try {
       await run();
@@ -51,10 +53,16 @@ export function createAdminOps({ store, payments, sheet, onTheWay, log }: AdminO
       const order = await store.setFulfillment(orderId, status, actor);
       if (!order) return null;
       log("fulfillment_status_changed", { orderId, status });
+      const pickup = order.fulfillment === "pickup";
       await Promise.all([
         syncSheet(order, { fulfillment: status }),
-        status === "OUT_FOR_DELIVERY" && onTheWay
+        status === "OUT_FOR_DELIVERY" && !pickup && onTheWay
           ? attempt("notification_success", "notification_failed", { orderId, kind: "on_the_way" }, () => onTheWay(order))
+          : undefined,
+        status === "READY" && pickup && readyForPickup
+          ? attempt("notification_success", "notification_failed", { orderId, kind: "ready_for_pickup" }, () =>
+              readyForPickup(order),
+            )
           : undefined,
       ]);
       return order;

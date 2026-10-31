@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { pilot } from "@/config/business";
+import { pickupLocation, pilot } from "@/config/business";
 import { formatWindow } from "@/lib/format";
 import { formatDay } from "@/lib/time";
 import { loadTrackingStore } from "@/server/integrations";
@@ -33,13 +33,28 @@ const steps: { status: FulfillmentStatus; label: string; text: string }[] = [
   { status: "DELIVERED", label: "Geliefert", text: "Guten Appetit!" },
 ];
 
+const pickupSteps: typeof steps = [
+  { status: "NEW", label: "Bestellt", text: "Deine Bestellung ist bei uns eingegangen." },
+  { status: "PREP", label: "In Zubereitung", text: "Deine Chicken Strips sind in der Fritteuse." },
+  {
+    status: "READY",
+    label: "Abholbereit",
+    text: `Alles ist verpackt und wartet auf dich: ${pickupLocation.street}, ${pickupLocation.city}.`,
+  },
+  { status: "DELIVERED", label: "Abgeholt", text: "Guten Appetit!" },
+];
+
 const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+
+function stepsFor(order: AdminOrder) {
+  return order.fulfillment === "pickup" ? pickupSteps : steps;
+}
 
 function headline(order: AdminOrder) {
   if (order.paymentStatus === "refunded") return "Bestellung erstattet";
   if (order.fulfillmentStatus === "CANCELLED") return "Bestellung storniert";
   if (order.paymentStatus === "pending" || order.paymentStatus === "expired") return "Zahlung ausstehend";
-  return steps.find((s) => s.status === order.fulfillmentStatus)?.label ?? "Bestellt";
+  return stepsFor(order).find((s) => s.status === order.fulfillmentStatus)?.label ?? "Bestellt";
 }
 
 async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token]">, "params">) {
@@ -62,7 +77,8 @@ async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token
   const stopped = order.fulfillmentStatus === "CANCELLED" || order.paymentStatus === "refunded";
   const unpaid = order.paymentStatus === "pending" || order.paymentStatus === "expired" || order.paymentStatus === "failed";
   const finished = stopped || order.fulfillmentStatus === "DELIVERED";
-  const current = steps.findIndex((s) => s.status === order.fulfillmentStatus);
+  const orderSteps = stepsFor(order);
+  const current = orderSteps.findIndex((s) => s.status === order.fulfillmentStatus);
 
   return (
     <>
@@ -71,7 +87,8 @@ async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token
         <span className="brush">{headline(order)}</span>
       </h1>
       <p className="lead">
-        {order.orderNumber} · {formatDay(order.deliveryDate)}, {formatWindow(order.slotStart, order.slotEnd)}
+        {order.orderNumber} · {order.fulfillment === "pickup" ? "Abholung" : "Lieferung"} {formatDay(order.deliveryDate)},{" "}
+        {formatWindow(order.slotStart, order.slotEnd)}
       </p>
 
       {stopped ? (
@@ -83,7 +100,7 @@ async function Tracking({ params }: Pick<PageProps<"/bestellung/verfolgen/[token
         <p className="notice">Sobald die Zahlung eingegangen ist, siehst du hier, wie weit deine Bestellung ist.</p>
       ) : (
         <ol className="tracking-steps">
-          {steps.map((step, i) => {
+          {orderSteps.map((step, i) => {
             const state = i < current ? "done" : i === current ? "current" : "todo";
             const at =
               step.status === "OUT_FOR_DELIVERY" ? order.outForDeliveryAt : step.status === "DELIVERED" ? order.deliveredAt : null;

@@ -1,6 +1,6 @@
 import "server-only";
 import type Stripe from "stripe";
-import { business } from "@/config/business";
+import { business, pickupLocation } from "@/config/business";
 import { formatWindow } from "@/lib/format";
 import { stripeProductId } from "@/lib/stripe-ids";
 import { formatDay } from "@/lib/time";
@@ -47,7 +47,9 @@ export function createStripePayments(
           custom_text: {
             submit: {
               message:
-                `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}` +
+                (order.fulfillment === "pickup"
+                  ? `Bestellung ${order.orderNumber} · Abholung ${delivery} in der ${pickupLocation.street}`
+                  : `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}`) +
                 // Website-Kunden bestätigen die AGB im Formular, WhatsApp-Kunden mit der Zahlung.
                 (order.source === "whatsapp" ? ` · Es gelten unsere AGB: ${siteUrl}/agb` : ""),
             },

@@ -1,5 +1,5 @@
 import "server-only";
-import { business, pilot, taxNote, trackingUrl, whatsappLink } from "@/config/business";
+import { business, pickupLocation, pilot, taxNote, trackingUrl, whatsappLink } from "@/config/business";
 import { surveyQuestions } from "@/config/survey";
 import { formatEuro, formatWindow } from "@/lib/format";
 import { formatDay } from "@/lib/time";
@@ -84,8 +84,13 @@ function orderDetails(order: OrderSummary) {
   return card(
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 ${row("Bestellnummer", `<strong>${order.orderNumber}</strong>`)}
-${row("Lieferung", delivery(order))}
-${row("Adresse", `${escape(order.street)}, ${escape(order.postalCode)} ${escape(business.area.split(", ").pop() ?? "")}${order.addressNote ? `<br><span style="color:${color.muted}">${escape(order.addressNote)}</span>` : ""}`)}
+${
+  order.fulfillment === "pickup"
+    ? `${row("Abholung", delivery(order))}
+${row("Abholort", `${escape(pickupLocation.street)}, ${escape(pickupLocation.city)}`)}`
+    : `${row("Lieferung", delivery(order))}
+${row("Adresse", `${escape(order.street)}, ${escape(order.postalCode)} ${escape(business.area.split(", ").pop() ?? "")}${order.addressNote ? `<br><span style="color:${color.muted}">${escape(order.addressNote)}</span>` : ""}`)}`
+}
 </table>`,
   );
 }
@@ -103,12 +108,16 @@ export function confirmationMail(order: OrderSummary) {
     html: layout({
       preheader: `Lieferung ${delivery(order)} · ${formatEuro(order.totalCents)}`,
       title: `Danke, ${order.customerName.split(" ")[0]}! 🍗`,
-      body: `${paragraph(`${status} Wir machen deine Chicken Strips frisch und liefern sie dir in deinem Zeitfenster.`)}
+      body: `${paragraph(
+        order.fulfillment === "pickup"
+          ? `${status} Wir machen deine Chicken Strips frisch, zu deinem Zeitfenster liegen sie zum Abholen bereit: <strong>${escape(pickupLocation.street)}, ${escape(pickupLocation.city)}</strong>.`
+          : `${status} Wir machen deine Chicken Strips frisch und liefern sie dir in deinem Zeitfenster.`,
+      )}
 ${orderDetails(order)}
 <h2 style="margin:28px 0 0;font-size:13px;letter-spacing:2px;color:${color.muted}">DEINE BESTELLUNG</h2>
 ${itemsTable(order)}
 <h2 style="margin:32px 0 6px;font-size:18px;color:${color.black}">Live verfolgen</h2>
-${paragraph(`Über den Button siehst du jederzeit, ob dein Essen in der Fritteuse ist oder schon unterwegs zu dir, ${firstName}.`)}
+${paragraph(`Über den Button siehst du jederzeit, ob dein Essen in der Fritteuse ist oder schon ${order.fulfillment === "pickup" ? "abholbereit" : "unterwegs zu dir"}, ${firstName}.`)}
 ${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}
 ${card(`<strong>Du bist beim Pop-up-Testlauf dabei.</strong> Bis ${pilot.endLabel} testen wir, wann FRANKLIN Lust auf Lean's hat. Sag uns in 30 Sekunden, wann du uns öfter hättest: <a href="${business.siteUrl}${pilot.surveyPath}" style="color:${color.red};font-weight:bold">zur Umfrage</a>`)}`,
     }),
@@ -127,13 +136,26 @@ ${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}`,
   };
 }
 
+export function readyForPickupMail(order: OrderSummary) {
+  const where = `${escape(pickupLocation.street)}, ${escape(pickupLocation.city)}`;
+  return {
+    subject: `Dein Chicken ist abholbereit (${order.orderNumber})`,
+    html: layout({
+      preheader: `Abholung in der ${pickupLocation.street}, ${formatWindow(order.slotStart, order.slotEnd)}.`,
+      title: "Dein Chicken ist abholbereit!",
+      body: `${paragraph(`Deine Bestellung <strong>${order.orderNumber}</strong> ist fertig und wartet auf dich: <strong>${where}</strong>, ${formatWindow(order.slotStart, order.slotEnd)}. Am besten gleich holen, solange sie heiß ist.`)}
+${button(trackingUrl(order.trackingToken), "Bestellung ansehen")}`,
+    }),
+  };
+}
+
 export function notificationMail(order: OrderSummary) {
   return {
-    subject: `Neue Bestellung ${order.orderNumber} · ${formatEuro(order.totalCents)} · ${order.slotStart} Uhr`,
+    subject: `Neue Bestellung ${order.orderNumber} · ${order.fulfillment === "pickup" ? "ABHOLUNG · " : ""}${formatEuro(order.totalCents)} · ${order.slotStart} Uhr`,
     html: layout({
       preheader: `${order.customerName} · ${delivery(order)}`,
       title: `Neue Bestellung ${order.orderNumber}`,
-      body: `${paragraph(`<strong>${escape(order.customerName)}</strong>${order.company ? ` (${escape(order.company)})` : ""} · <a href="tel:${order.customerPhone}" style="color:${color.red}">${escape(order.customerPhone)}</a> · Quelle: ${order.source === "whatsapp" ? "WhatsApp" : "Website"}`)}
+      body: `${paragraph(`<strong>${escape(order.customerName)}</strong>${order.company ? ` (${escape(order.company)})` : ""} · <a href="tel:${order.customerPhone}" style="color:${color.red}">${escape(order.customerPhone)}</a> · Quelle: ${order.source === "whatsapp" ? "WhatsApp" : "Website"}${order.fulfillment === "pickup" ? " · <strong>Abholung</strong>" : ""}`)}
 ${orderDetails(order)}
 ${itemsTable(order)}
 ${order.customerNote ? card(`<em>„${escape(order.customerNote)}“</em>`) : ""}
@@ -191,6 +213,9 @@ export function createResendMailer(config: MailerConfig) {
       : undefined,
     async onTheWay(order: OrderSummary) {
       if (order.customerEmail) await send(order.customerEmail, onTheWayMail(order), `on_the_way_${order.id}`);
+    },
+    async readyForPickup(order: OrderSummary) {
+      if (order.customerEmail) await send(order.customerEmail, readyForPickupMail(order), `ready_${order.id}`);
     },
   };
 }

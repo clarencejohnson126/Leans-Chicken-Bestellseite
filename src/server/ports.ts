@@ -1,4 +1,4 @@
-import type { PricedLine } from "@/lib/pricing";
+import type { FulfillmentType, PricedLine } from "@/lib/pricing";
 import type { SurveyResponse } from "@/lib/survey";
 import type { Slot } from "@/lib/slots";
 
@@ -18,6 +18,7 @@ export type CustomerData = {
 
 export type PendingOrderInput = {
   source: OrderSource;
+  fulfillment: FulfillmentType;
   customer: CustomerData;
   slot: Pick<Slot, "id" | "date" | "start" | "end">;
   note: string;
@@ -77,6 +78,8 @@ export type OrderSummary = {
   id: string;
   orderNumber: string;
   source: OrderSource;
+  /** Lieferung oder Abholung. Bei Abholung sind street und postalCode leer. */
+  fulfillment: FulfillmentType;
   paymentStatus: PaymentStatus;
   customerName: string;
   customerPhone: string;

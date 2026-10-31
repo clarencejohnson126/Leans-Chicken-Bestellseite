@@ -2,9 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { createAdminOps } from "@/server/admin-ops";
 import type { AdminOrder, AdminStore, PaymentProvider, PaymentStatus } from "@/server/ports";
 
-function setup(paymentStatus: PaymentStatus = "paid", options: { failRefund?: boolean; failSheet?: boolean } = {}) {
+function setup(
+  paymentStatus: PaymentStatus = "paid",
+  options: { failRefund?: boolean; failSheet?: boolean; pickup?: boolean } = {},
+) {
   const order = {
     id: "order-1",
+    fulfillment: options.pickup ? "pickup" : "delivery",
     orderNumber: "LEAN-1102-001",
     paymentStatus,
     fulfillmentStatus: "NEW",
@@ -41,9 +45,10 @@ function setup(paymentStatus: PaymentStatus = "paid", options: { failRefund?: bo
     if (options.failSheet) throw new Error("sheets 503");
   });
   const onTheWay = vi.fn(async () => {});
+  const readyForPickup = vi.fn(async () => {});
   const log = vi.fn();
-  const ops = createAdminOps({ store, payments, sheet, onTheWay, log });
-  return { ops, order, payments, sheet, onTheWay, log };
+  const ops = createAdminOps({ store, payments, sheet, onTheWay, readyForPickup, log });
+  return { ops, order, payments, sheet, onTheWay, readyForPickup, log };
 }
 
 describe("Lieferstatus aus dem Admin", () => {
@@ -58,6 +63,20 @@ describe("Lieferstatus aus dem Admin", () => {
     const { ops, onTheWay, order } = setup();
     await ops.setStatus("order-1", "OUT_FOR_DELIVERY", "lean@test");
     expect(onTheWay).toHaveBeenCalledWith(order);
+  });
+
+  it("schickt bei Abholung die Abholbereit-Mail statt der Unterwegs-Mail", async () => {
+    const { ops, onTheWay, readyForPickup, order } = setup("paid", { pickup: true });
+    await ops.setStatus("order-1", "READY", "lean@test");
+    expect(readyForPickup).toHaveBeenCalledWith(order);
+    await ops.setStatus("order-1", "OUT_FOR_DELIVERY", "lean@test");
+    expect(onTheWay).not.toHaveBeenCalled();
+  });
+
+  it("schickt bei Lieferung keine Abholbereit-Mail", async () => {
+    const { ops, readyForPickup } = setup();
+    await ops.setStatus("order-1", "READY", "lean@test");
+    expect(readyForPickup).not.toHaveBeenCalled();
   });
 
   it("lässt den Klick nicht scheitern, wenn das Sheet nicht erreichbar ist", async () => {

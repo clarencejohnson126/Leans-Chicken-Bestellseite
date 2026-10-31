@@ -53,7 +53,15 @@ export async function refundAction(_prev: { error: string } | null, formData: Fo
 }
 
 export type WhatsAppOrderState =
-  | { ok: true; orderNumber: string; checkoutUrl: string; phone: string; firstName: string; total: string }
+  | {
+      ok: true;
+      orderNumber: string;
+      checkoutUrl: string;
+      phone: string;
+      firstName: string;
+      total: string;
+      pickup: boolean;
+    }
   | { ok: false; error: string; fields?: Record<string, string> }
   | null;
 
@@ -69,6 +77,7 @@ export async function createWhatsAppOrderAction(
   );
   const parsed = orderRequestSchema.safeParse({
     items,
+    fulfillment: field("fulfillment") === "pickup" ? "pickup" : "delivery",
     slotId: field("slotId"),
     customer: {
       name: field("name"),
@@ -101,6 +110,7 @@ export async function createWhatsAppOrderAction(
     checkoutUrl: result.checkoutUrl,
     phone: parsed.data.customer.phone,
     firstName: parsed.data.customer.name.split(" ")[0],
-    total: formatEuro(priceCart(parsed.data.items).totalCents),
+    total: formatEuro(priceCart(parsed.data.items, parsed.data.fulfillment).totalCents),
+    pickup: parsed.data.fulfillment === "pickup",
   };
 }

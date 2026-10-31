@@ -76,6 +76,7 @@ function build(): Integrations | null {
       payments,
       sheet: sheets && ((orderNumber, update) => sheets.updateOrderStatus(orderNumber, update)),
       onTheWay: mail?.onTheWay,
+      readyForPickup: mail?.readyForPickup,
       log,
     }),
     survey: { store: createSurveyStore(db), notifyTip: mail?.surveyTip },

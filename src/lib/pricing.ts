@@ -2,6 +2,12 @@ import { catalog, orderRules, type CatalogItem, type ItemId } from "@/config/men
 
 export type CartInput = Partial<Record<ItemId, number>>;
 
+export type FulfillmentType = "delivery" | "pickup";
+
+export function minOrderCents(fulfillment: FulfillmentType) {
+  return fulfillment === "pickup" ? orderRules.pickupMinOrderCents : orderRules.minOrderCents;
+}
+
 export type PricedLine = {
   itemId: ItemId;
   kind: CatalogItem["kind"];
@@ -25,7 +31,7 @@ export type PricedCart = {
 };
 
 /** Einzige Stelle, an der Beträge entstehen. Läuft auf dem Server und als Vorschau im Client. */
-export function priceCart(cart: CartInput): PricedCart {
+export function priceCart(cart: CartInput, fulfillment: FulfillmentType = "delivery"): PricedCart {
   const lines: PricedLine[] = [];
   for (const item of catalog) {
     const quantity = cart[item.id as ItemId] ?? 0;
@@ -53,8 +59,8 @@ export function priceCart(cart: CartInput): PricedCart {
     strips: sum((l) => l.strips),
     fries: sum((l) => l.fries),
     totalCents,
-    meetsMinimum: totalCents >= orderRules.minOrderCents,
-    missingCents: Math.max(0, orderRules.minOrderCents - totalCents),
+    meetsMinimum: totalCents >= minOrderCents(fulfillment),
+    missingCents: Math.max(0, minOrderCents(fulfillment) - totalCents),
     hasMenu: menuCount > 0,
   };
 }
