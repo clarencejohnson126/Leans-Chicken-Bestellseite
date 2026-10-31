@@ -48,6 +48,9 @@ export const pickupLocation = {
 // Pop-up-Testlauf: begrenzter Zeitraum, in dem wir den Bedarf auf FRANKLIN testen.
 export const pilot = {
   label: "Pop-up Kitchen",
+  startsOn: schedule.firstDeliveryDate,
+  startLabel: "16. November",
+  startShort: "16.11.",
   endsOn: "2026-12-18",
   endLabel: "18. Dezember",
   endShort: "18.12.",

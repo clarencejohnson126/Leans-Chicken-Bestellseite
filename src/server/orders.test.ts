@@ -38,10 +38,10 @@ function memoryStore(): OrderStore & { orders: (StoredOrder & { status: string }
   };
 }
 
-const now = new Date("2026-10-27T20:00:00Z");
+const now = new Date("2026-11-24T20:00:00Z");
 const noop = () => {};
 
-function request(items: Record<string, number>, slotId = "2026-10-28_12:00") {
+function request(items: Record<string, number>, slotId = "2026-11-25_12:00") {
   return orderRequestSchema.parse({
     items,
     slotId,
@@ -92,7 +92,7 @@ describe("createOrder", () => {
     const pickup = orderRequestSchema.parse({
       items: { basic: 1 },
       fulfillment: "pickup",
-      slotId: "2026-10-28_12:00",
+      slotId: "2026-11-25_12:00",
       customer: { name: "Max", phone: "0162 1234567", street: "Irgendwo 1" },
       acceptTerms: true,
     });
@@ -102,7 +102,7 @@ describe("createOrder", () => {
   });
 
   it("lehnt Fenster nach Bestellschluss ab", async () => {
-    const late = new Date("2026-10-28T10:15:00Z"); // 11:15 Berlin, Schluss für 12:00 war 11:00
+    const late = new Date("2026-11-25T10:15:00Z"); // 11:15 Berlin, Schluss für 12:00 war 11:00
     const result = await createOrder(request({ "family-pack": 2 }), "website", deps(), late, noop);
     expect(result).toMatchObject({ ok: false, code: "slot_closed" });
   });
@@ -114,7 +114,7 @@ describe("createOrder", () => {
     expect(result).toMatchObject({
       ok: false,
       code: "slot_full",
-      alternative: { id: "2026-10-28_12:30" },
+      alternative: { id: "2026-11-25_12:30" },
     });
   });
 

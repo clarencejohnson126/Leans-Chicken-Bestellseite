@@ -14,7 +14,9 @@ export function SiteHeader() {
           </Suspense>
           <Link href="/#testlauf" className="pilot-badge">
             <b>{pilot.label}</b>
-            <span>Testlauf bis {pilot.endShort}</span>
+            <span>
+              Start {pilot.startShort} · bis {pilot.endShort}
+            </span>
           </Link>
         </div>
         <nav className="header-nav" aria-label="Hauptnavigation">

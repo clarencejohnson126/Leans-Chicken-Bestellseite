@@ -572,6 +572,10 @@ h3 {
   gap: 24px;
   margin-top: 28px;
 }
+/* Sonst drückt die waagrecht scrollende Tagesleiste die Spalte über den Bildschirmrand. */
+.order-grid > * {
+  min-width: 0;
+}
 .card {
   background: var(--panel);
   border: 1px solid var(--line);

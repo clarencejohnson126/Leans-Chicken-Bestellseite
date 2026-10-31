@@ -15,6 +15,9 @@ export const schedule = {
   maxStripsPerWindow: 100,
   // Bestellschluss: so viele Minuten vor Beginn des Lieferfensters.
   orderLeadMinutes: 60,
+  // Erster Liefertag des Testlaufs. Davor ist nichts buchbar; vorbestellen geht schon vorher,
+  // der Buchungshorizont zählt dann ab diesem Tag.
+  firstDeliveryDate: "2026-11-16",
   // Wie viele Kalendertage im Voraus bestellt werden kann.
   daysAhead: 7,
   // Unbezahlte Bestellungen halten Kapazität so lange. Stripe-Sessions laufen technisch mindestens

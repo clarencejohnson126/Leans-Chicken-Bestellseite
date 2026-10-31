@@ -11,7 +11,7 @@ export default function SurveyPage() {
   return (
     <main className="wrap survey-page">
       <p className="eyebrow">
-        {pilot.label} · Testlauf bis {pilot.endLabel}
+        {pilot.label} · Start {pilot.startLabel} · bis {pilot.endLabel}
       </p>
       <h1>
         Wann hättest du gern <span className="brush">Lean&apos;s?</span>

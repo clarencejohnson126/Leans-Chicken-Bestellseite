@@ -6,42 +6,47 @@ import { normalizePhone, orderRequestSchema } from "@/lib/validation";
 
 describe("Zeitzone Europe/Berlin", () => {
   it("rechnet Winterzeit (MEZ, UTC+1) korrekt um", () => {
-    expect(localToInstant("2026-10-28", "11:30").toISOString()).toBe("2026-10-28T10:30:00.000Z");
+    expect(localToInstant("2026-11-25", "11:30").toISOString()).toBe("2026-11-25T10:30:00.000Z");
   });
   it("rechnet Sommerzeit (MESZ, UTC+2) korrekt um", () => {
     expect(localToInstant("2026-07-01", "11:30").toISOString()).toBe("2026-07-01T09:30:00.000Z");
   });
   it("liest das Berliner Kalenderdatum auch kurz vor Mitternacht UTC", () => {
-    expect(localParts(new Date("2026-10-27T23:30:00Z")).date).toBe("2026-10-28");
+    expect(localParts(new Date("2026-11-24T23:30:00Z")).date).toBe("2026-11-25");
   });
 });
 
 describe("Lieferfenster", () => {
-  const tuesdayEvening = new Date("2026-10-27T20:00:00Z");
+  const tuesdayEvening = new Date("2026-11-24T20:00:00Z");
 
   it("bietet nur Mo, Mi und Do im Buchungshorizont an", () => {
     const days = listDeliveryDays(tuesdayEvening).map((d) => d.date);
-    expect(days).toEqual(["2026-10-28", "2026-10-29", "2026-11-02"]);
+    expect(days).toEqual(["2026-11-25", "2026-11-26", "2026-11-30"]);
+  });
+
+  it("bietet vor dem Start nur Tage ab dem ersten Liefertag an", () => {
+    const days = listDeliveryDays(new Date("2026-10-31T10:00:00Z")).map((d) => d.date);
+    expect(days).toEqual(["2026-11-16", "2026-11-18", "2026-11-19", "2026-11-23"]);
   });
 
   it("schließt ein Fenster 60 Minuten vor Beginn", () => {
-    const slot = resolveSlot("2026-10-28_11:30")!;
-    expect(isSlotOpen(slot, new Date("2026-10-28T09:29:00Z"))).toBe(true); // 10:29 Berlin
-    expect(isSlotOpen(slot, new Date("2026-10-28T09:30:00Z"))).toBe(false); // 10:30 Berlin
+    const slot = resolveSlot("2026-11-25_11:30")!;
+    expect(isSlotOpen(slot, new Date("2026-11-25T09:29:00Z"))).toBe(true); // 10:29 Berlin
+    expect(isSlotOpen(slot, new Date("2026-11-25T09:30:00Z"))).toBe(false); // 10:30 Berlin
   });
 
   it("lehnt Tage ohne Lieferung und unbekannte Uhrzeiten ab", () => {
-    expect(resolveSlot("2026-10-27_11:30")).toBeNull(); // Dienstag
-    expect(resolveSlot("2026-10-28_11:45")).toBeNull();
+    expect(resolveSlot("2026-11-24_11:30")).toBeNull(); // Dienstag
+    expect(resolveSlot("2026-11-25_11:45")).toBeNull();
     expect(resolveSlot("kaputt")).toBeNull();
   });
 
   it("zieht reservierte Strips ab und findet das nächste freie Fenster", () => {
-    const days = listDeliveryDays(tuesdayEvening, { "2026-10-28_11:30": 100, "2026-10-28_12:00": 95 });
+    const days = listDeliveryDays(tuesdayEvening, { "2026-11-25_11:30": 100, "2026-11-25_12:00": 95 });
     const first = days[0].slots;
     expect(first[0].available).toBe(false);
     expect(first[1].remainingStrips).toBe(5);
-    expect(nextAvailableSlot(days, 10)?.id).toBe("2026-10-28_12:30");
+    expect(nextAvailableSlot(days, 10)?.id).toBe("2026-11-25_12:30");
   });
 });
 
@@ -78,7 +83,7 @@ describe("Preise laut Katalog", () => {
 describe("Eingabevalidierung", () => {
   const valid = {
     items: { "crunch-combo": 2 },
-    slotId: "2026-10-28_12:00",
+    slotId: "2026-11-25_12:00",
     customer: { name: "Max", phone: "0162 1234567", street: "Robert-Funari-Str. 1", postalCode: "68309" },
     acceptTerms: true,
   };

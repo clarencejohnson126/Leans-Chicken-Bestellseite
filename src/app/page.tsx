@@ -84,7 +84,7 @@ export default function Home() {
       <section className="wrap hero">
         <div>
           <p className="eyebrow">
-            {pilot.label} · Testlauf bis {pilot.endLabel}
+            {pilot.label} · Start am {pilot.startLabel} · Testlauf bis {pilot.endLabel}
           </p>
           <h1>
             Crispy Chicken.
@@ -97,6 +97,9 @@ export default function Home() {
             ins Büro oder nach Hause.
           </p>
           <div className="hero-facts">
+            <span className="chip">
+              Start <b>{pilot.startLabel}</b>
+            </span>
             <span className="chip">
               <b>{deliveryDays}</b> {deliveryHours} Uhr
             </span>
@@ -163,7 +166,7 @@ export default function Home() {
           <p className="eyebrow">{pilot.label} · Testlauf</p>
           <h2>Warum nur drei Tage die Woche?</h2>
           <p className="lead">
-            Nach dem ausverkauften Stand auf dem LOOPFEST testen wir bis zum {pilot.endLabel}, ob FRANKLIN Lust auf
+            Nach dem ausverkauften Stand auf dem LOOPFEST testen wir vom {pilot.startLabel} bis zum {pilot.endLabel}, ob FRANKLIN Lust auf
             Lean&apos;s hat. Deshalb liefern wir erst mal nur montags, mittwochs und donnerstags mittags und braten
             jede Portion frisch für dein Zeitfenster. Läuft&apos;s, kommen mehr Tage dazu. Welche, entscheidest du mit.
           </p>
@@ -448,7 +451,8 @@ export default function Home() {
           <details>
             <summary>Wann liefert ihr und bis wann kann ich bestellen?</summary>
             <p>
-              {deliveryDays} zwischen {deliveryHours} Uhr in 30-Minuten-Fenstern. Bestellen kannst du
+              Los geht&apos;s am {pilot.startLabel}, dann {deliveryDays} zwischen {deliveryHours} Uhr in
+              30-Minuten-Fenstern. Vorbestellen kannst du schon jetzt. Bestellen kannst du
               bis {schedule.orderLeadMinutes} Minuten vor Beginn deines Fensters und bis zu{" "}
               {schedule.daysAhead} Tage im Voraus.
             </p>

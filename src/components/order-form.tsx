@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { pickupLocation, whatsappLink } from "@/config/business";
+import { pickupLocation, pilot, whatsappLink } from "@/config/business";
 import { menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
 import { formatEuro, formatWindow } from "@/lib/format";
@@ -226,6 +226,11 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               <b>
                 {pickupLocation.street}, {pickupLocation.city}
               </b>
+            </p>
+          )}
+          {days[0]?.date === pilot.startsOn && (
+            <p className="hint" style={{ marginBottom: 14 }}>
+              Wir starten am <b>{pilot.startLabel}</b>. Du kannst jetzt schon vorbestellen.
             </p>
           )}
           {days.length === 0 ? (

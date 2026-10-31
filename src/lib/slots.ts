@@ -53,10 +53,16 @@ export function isSlotOpen(slot: Slot, now: Date) {
   return now.getTime() < slot.cutoffAt.getTime();
 }
 
-/** Liegt der Slot innerhalb des Buchungshorizonts (nicht zu weit in der Zukunft)? */
+/** Erster buchbarer Kalendertag: heute, vor dem Start des Testlaufs aber der erste Liefertag. */
+function firstBookableDate(now: Date) {
+  const today = localParts(now).date;
+  return today < schedule.firstDeliveryDate ? schedule.firstDeliveryDate : today;
+}
+
+/** Liegt der Slot innerhalb des Buchungshorizonts (nicht vor dem Start, nicht zu weit in der Zukunft)? */
 export function isWithinHorizon(slot: Slot, now: Date) {
-  const last = addDays(localParts(now).date, schedule.daysAhead);
-  return slot.date <= last;
+  const first = firstBookableDate(now);
+  return slot.date >= first && slot.date <= addDays(first, schedule.daysAhead);
 }
 
 /** Alle Liefertage im Buchungshorizont, mit Verfügbarkeit je Fenster. */
@@ -64,10 +70,10 @@ export function listDeliveryDays(
   now: Date,
   reservedStrips: Record<string, number> = {},
 ): DeliveryDay[] {
-  const today = localParts(now).date;
+  const first = firstBookableDate(now);
   const days: DeliveryDay[] = [];
   for (let i = 0; i <= schedule.daysAhead; i++) {
-    const date = addDays(today, i);
+    const date = addDays(first, i);
     if (!deliveryWeekdays.includes(isoWeekday(date))) continue;
     const slots = schedule.windows.map((w) => {
       const slot = buildSlot(date, w);
