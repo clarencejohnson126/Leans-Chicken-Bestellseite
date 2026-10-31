@@ -26,8 +26,8 @@ export default function TrackingPage({ params }: PageProps<"/bestellung/verfolge
 const steps: { status: FulfillmentStatus; label: string; text: string }[] = [
   { status: "NEW", label: "Bestellt", text: "Deine Bestellung ist bei uns eingegangen." },
   { status: "PREP", label: "In Zubereitung", text: "Deine Chicken Strips sind in der Fritteuse." },
-  { status: "READY", label: "Fertig", text: "Alles ist verpackt und wartet aufs Rad." },
-  { status: "OUT_FOR_DELIVERY", label: "Unterwegs", text: "Lean ist mit dem Rad auf dem Weg zu dir." },
+  { status: "READY", label: "Fertig", text: "Alles ist verpackt und wartet auf die Lieferung." },
+  { status: "OUT_FOR_DELIVERY", label: "Unterwegs", text: "Deine Bestellung ist auf dem Weg zu dir." },
   { status: "DELIVERED", label: "Geliefert", text: "Guten Appetit!" },
 ];
 

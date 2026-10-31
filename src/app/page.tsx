@@ -46,7 +46,7 @@ const reasons = [
     text: "Wir braten für dein Lieferfenster, nicht auf Vorrat. Deshalb ist die Menge pro Fenster begrenzt.",
   },
   {
-    title: "Mit dem Rad, kurze Wege",
+    title: "Kurze Wege",
     text: "Wir liefern nur auf FRANKLIN. Vom Herd zu dir sind es Minuten, nicht eine halbe Stunde.",
   },
   {
@@ -89,12 +89,12 @@ export default function Home() {
           <h1>
             Crispy Chicken.
             <br />
-            <span className="brush">Mit dem Rad</span> zu dir.
+            <span className="brush">Frisch</span> geliefert.
           </h1>
           <p className="lead">
             Knusprige Chicken Strips in Cornflakes-Panade, goldene Pommes und Lean&apos;s Signature
-            Sauce. Vorbestellen, online bezahlen – wir bringen dir dein Mittagessen frisch mit dem
-            Fahrrad, direkt ins Büro oder nach Hause.
+            Sauce. Vorbestellen, online bezahlen – wir bringen dir dein Mittagessen frisch, direkt
+            ins Büro oder nach Hause.
           </p>
           <div className="hero-facts">
             <span className="chip">
@@ -148,8 +148,8 @@ export default function Home() {
             <span>PLZ {deliveryArea.postalCodes.join(", ")}</span>
           </div>
           <div className="band-item">
-            <strong>Per Fahrrad</strong>
-            <span>Keine Liefergebühr</span>
+            <strong>0 € Liefergebühr</strong>
+            <span>Ab {formatEuro(orderRules.minOrderCents)} Bestellwert</span>
           </div>
         </div>
       </div>
@@ -327,7 +327,7 @@ export default function Home() {
           </div>
           <div className="step">
             <h3>Genießen</h3>
-            <p>Wir braten frisch und bringen&apos;s mit dem Rad in deinem Zeitfenster.</p>
+            <p>Wir braten frisch und bringen&apos;s in deinem Zeitfenster.</p>
           </div>
         </div>
       </section>
@@ -371,7 +371,7 @@ export default function Home() {
         </figure>
         <div>
           <p className="eyebrow">Aus FRANKLIN. Für FRANKLIN.</p>
-          <h2>Ein Junge, ein Rezept, ein Fahrrad.</h2>
+          <h2>Ein Junge, ein Rezept, ein Quartier.</h2>
           <p className="lead">
             {business.name} ist Leans Projekt – mit der ganzen Familie im Rücken. Die Idee: das
             Chicken, das wir selbst am liebsten essen, so frisch wie möglich zu den Nachbarn bringen.

@@ -13,10 +13,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(business.siteUrl),
   title: `${business.name} | Chicken Strips auf FRANKLIN bestellen`,
   description:
-    "Crispy Chicken Strips mit Pommes, frisch gemacht und mit dem Fahrrad geliefert. Montag, Mittwoch und Donnerstag auf ganz FRANKLIN, Mannheim.",
+    "Crispy Chicken Strips mit Pommes, frisch gemacht und geliefert. Montag, Mittwoch und Donnerstag auf ganz FRANKLIN, Mannheim.",
   openGraph: {
     title: `${business.name} — ${business.tagline}`,
-    description: "Vorbestellen, bezahlen, Lean bringt's mit dem Rad. Ganz FRANKLIN, ohne Liefergebühr.",
+    description: "Vorbestellen, bezahlen, wir liefern. Ganz FRANKLIN, ohne Liefergebühr.",
     locale: "de_DE",
     type: "website",
     images: [{ url: "/assets/photos/approved-team.webp", width: 1800, height: 3197 }],

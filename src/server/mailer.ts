@@ -59,7 +59,7 @@ function layout({ preheader, title, body }: { preheader: string; title: string; 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
 <tr><td align="center" style="background:${color.black};padding:28px 24px 22px">
 <a href="${site}"><img src="${site}/assets/brand/badge-email.png" width="96" height="96" alt="${escape(business.name)}" style="display:block;border:0"></a>
-<p style="margin:12px 0 0;font-family:${font};font-size:12px;letter-spacing:3px;font-weight:bold;color:${color.cream}">CRISPY CHICKEN · MIT DEM RAD ZU DIR</p>
+<p style="margin:12px 0 0;font-family:${font};font-size:12px;letter-spacing:3px;font-weight:bold;color:${color.cream}">CRISPY CHICKEN · FRISCH GELIEFERT</p>
 </td></tr>
 <tr><td style="background:${color.red};height:6px;font-size:0;line-height:0">&nbsp;</td></tr>
 <tr><td style="padding:32px 28px 8px">
@@ -101,12 +101,12 @@ export function confirmationMail(order: OrderSummary) {
     html: layout({
       preheader: `Lieferung ${delivery(order)} · ${formatEuro(order.totalCents)}`,
       title: `Danke, ${order.customerName.split(" ")[0]}! 🍗`,
-      body: `${paragraph(`${status} Wir machen deine Chicken Strips frisch und Lean bringt sie dir mit dem Rad.`)}
+      body: `${paragraph(`${status} Wir machen deine Chicken Strips frisch und liefern sie dir in deinem Zeitfenster.`)}
 ${orderDetails(order)}
 <h2 style="margin:28px 0 0;font-size:13px;letter-spacing:2px;color:${color.muted}">DEINE BESTELLUNG</h2>
 ${itemsTable(order)}
 <h2 style="margin:32px 0 6px;font-size:18px;color:${color.black}">Live verfolgen</h2>
-${paragraph(`Über den Button siehst du jederzeit, ob dein Essen in der Fritteuse ist oder schon auf dem Rad zu dir, ${firstName}.`)}
+${paragraph(`Über den Button siehst du jederzeit, ob dein Essen in der Fritteuse ist oder schon unterwegs zu dir, ${firstName}.`)}
 ${button(trackingUrl(order.trackingToken), "Bestellung verfolgen")}`,
     }),
   };

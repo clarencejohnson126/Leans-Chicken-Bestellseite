@@ -6,7 +6,7 @@ import { formatEuro } from "@/lib/format";
 export const business = {
   name: "Lean's Crispy Chicken",
   shortName: "LEAN'S",
-  tagline: "Crispy Chicken. Mit dem Rad zu dir.",
+  tagline: "Crispy Chicken. Frisch geliefert.",
   area: "FRANKLIN, Mannheim",
   // Lean's Crispy Chicken ist ein Angebot von Johnson Services (Inhaber Clarence Johnson).
   operator: {

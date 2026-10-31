@@ -26,7 +26,7 @@ export default function ThanksPage({ searchParams }: PageProps<"/bestellung/dank
 }
 
 const statusText: Partial<Record<OrderSummary["paymentStatus"], string>> = {
-  paid: "Bezahlt. Wir liefern in deinem Zeitfenster mit dem Fahrrad.",
+  paid: "Bezahlt. Wir liefern in deinem Zeitfenster.",
   processing: "SEPA-Lastschrift eingereicht. Wir liefern wie geplant, die Abbuchung folgt in den nächsten Tagen.",
   pending: "Deine Zahlung wird gerade bestätigt. Das dauert meist nur ein paar Sekunden – lade die Seite gleich neu.",
 };
@@ -71,8 +71,7 @@ async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke"
         </>
       ) : (
         <p className="lead">
-          Du bekommst deine Zahlungsbestätigung per E-Mail. Wir liefern in deinem gewählten Zeitfenster mit dem
-          Fahrrad.
+          Du bekommst deine Zahlungsbestätigung per E-Mail. Wir liefern in deinem gewählten Zeitfenster.
         </p>
       )}
       <p className="lead">Änderungen? Schreib uns auf WhatsApp.</p>

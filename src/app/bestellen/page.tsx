@@ -20,7 +20,7 @@ export default function OrderPage() {
         Deine <span className="brush">Bestellung</span>
       </h1>
       <p className="lead">
-        Menü wählen, Lieferzeit aussuchen, bezahlen. Lean bringt&apos;s mit dem Rad. {taxNote}
+        Menü wählen, Lieferzeit aussuchen, bezahlen. Wir liefern in deinem Zeitfenster. {taxNote}
       </p>
       <Suspense fallback={<p className="hint" style={{ marginTop: 28 }}>Lieferzeiten werden geladen …</p>}>
         <LiveOrderForm />
