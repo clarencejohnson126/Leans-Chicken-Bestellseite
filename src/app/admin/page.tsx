@@ -82,9 +82,8 @@ function production(orders: AdminOrder[]) {
       fries += (item?.fries ?? 0) * line.quantity;
       if (item?.kind === "menu") {
         counts.set(line.name, (counts.get(line.name) ?? 0) + line.quantity);
-        // Jedes Menü enthält Worcestershire Sauce, die Pommes-Menüs zusätzlich Ketchup.
-        sauces["Worcestershire Sauce"] += line.quantity;
-        if (item.fries) sauces.Ketchup += line.quantity;
+        sauces["Worcestershire Sauce"] += (item.dips?.worcester ?? 0) * line.quantity;
+        sauces.Ketchup += (item.dips?.ketchup ?? 0) * line.quantity;
       }
       if (line.itemId === "worcester") sauces["Worcestershire Sauce"] += line.quantity;
       if (line.itemId === "ketchup") sauces.Ketchup += line.quantity;

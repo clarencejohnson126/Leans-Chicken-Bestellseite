@@ -153,8 +153,8 @@ export function OrderForm({ days }: { days: DayOption[] }) {
                 <Image
                   src={item.image}
                   alt={`${item.name}: ${item.description}`}
-                  width={709}
-                  height={390}
+                  width={1200}
+                  height={900}
                   sizes="(min-width: 960px) 520px, 90vw"
                 />
                 <div className="menu-card-body">

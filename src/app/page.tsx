@@ -127,15 +127,11 @@ export default function Home() {
           <Image
             src={featured.image}
             alt={`${featured.name}: ${featured.description}`}
-            width={709}
-            height={390}
+            width={1200}
+            height={900}
             priority
             sizes="(min-width: 860px) 520px, 92vw"
           />
-          <div className="price-sticker" aria-hidden="true">
-            <span>{featured.name.toUpperCase()}</span>
-            <strong>{price(featured.priceCents)}</strong>
-          </div>
         </div>
       </section>
 
@@ -234,8 +230,8 @@ export default function Home() {
                 <Image
                   src={item.image}
                   alt={`${item.name}: ${item.description}`}
-                  width={709}
-                  height={390}
+                  width={1200}
+                  height={900}
                   sizes="(min-width: 760px) 560px, 92vw"
                 />
                 {badges[item.id] && <span className="menu-badge">{badges[item.id]}</span>}

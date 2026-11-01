@@ -53,9 +53,9 @@ describe("Lieferfenster", () => {
 describe("Preise laut Katalog", () => {
   it("berechnet Menüs und Side Orders serverseitig", () => {
     const cart = priceCart({ "family-pack": 1, pommes: 1, mayo: 2 });
-    expect(cart.totalCents).toBe(1600 + 300 + 200);
+    expect(cart.totalCents).toBe(1800 + 300 + 200);
     expect(cart.strips).toBe(10);
-    expect(cart.fries).toBe(2);
+    expect(cart.fries).toBe(3);
     expect(cart.menuCount).toBe(1);
     expect(cart.meetsMinimum).toBe(true);
   });
@@ -63,8 +63,8 @@ describe("Preise laut Katalog", () => {
   it("kennt die vier Menüpreise", () => {
     expect(priceCart({ basic: 1 }).totalCents).toBe(800);
     expect(priceCart({ "crunch-combo": 1 }).totalCents).toBe(1000);
-    expect(priceCart({ "big-boy-box": 1 }).totalCents).toBe(1300);
-    expect(priceCart({ "family-pack": 1 }).totalCents).toBe(1600);
+    expect(priceCart({ "big-boy-box": 1 }).totalCents).toBe(1400);
+    expect(priceCart({ "family-pack": 1 }).totalCents).toBe(1800);
   });
 
   it("meldet den fehlenden Betrag bis zum Mindestbestellwert", () => {
@@ -137,7 +137,7 @@ describe("WhatsApp-Bestellvorlage", () => {
     const { whatsappOrderTemplate } = await import("@/config/business");
     const text = whatsappOrderTemplate().replace(/\u00a0/g, " ");
     expect(text).toContain("Basic (8,00 €): ");
-    expect(text).toContain("Family Pack (16,00 €): ");
+    expect(text).toContain("Family Pack (18,00 €): ");
     expect(text).toContain("Worcestershire Sauce 1,50 €");
     expect(text).toContain("Mo/Mi/Do, 11:30–14:00 Uhr");
     expect(text).toContain("Adresse (68309 FRANKLIN): ");

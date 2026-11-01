@@ -1,4 +1,4 @@
-// Produktkatalog von Lean's (Preise Stand 30.10.2026 vom Betreiber). Preise und Produkte werden
+// Produktkatalog von Lean's (Preise Stand 01.11.2026 vom Betreiber). Preise und Produkte werden
 // ausschließlich hier gepflegt; der Server berechnet jeden Betrag aus diesen Werten.
 
 export type CatalogItem = {
@@ -11,6 +11,8 @@ export type CatalogItem = {
   priceCents: number;
   strips: number;
   fries: number;
+  // Im Menü enthaltene Dips, für die Produktionsübersicht im Admin.
+  dips?: { worcester: number; ketchup: number };
   image?: string;
 };
 
@@ -25,7 +27,8 @@ export const menus = [
     priceCents: 800,
     strips: 5,
     fries: 0,
-    image: "/assets/menu/basic-box.webp",
+    dips: { worcester: 1, ketchup: 0 },
+    image: "/assets/menu/basic-2026-11.webp",
   },
   {
     id: "crunch-combo",
@@ -37,7 +40,8 @@ export const menus = [
     priceCents: 1000,
     strips: 5,
     fries: 1,
-    image: "/assets/menu/crunch-combo-box.webp",
+    dips: { worcester: 1, ketchup: 1 },
+    image: "/assets/menu/crunch-combo-2026-11.webp",
   },
   {
     id: "big-boy-box",
@@ -45,23 +49,25 @@ export const menus = [
     number: 3,
     name: "Big Boy Box",
     description: "10 Chicken Strips",
-    includes: "inkl. Worcestershire Sauce",
-    priceCents: 1300,
+    includes: "inkl. 2× Worcestershire Sauce",
+    priceCents: 1400,
     strips: 10,
     fries: 0,
-    image: "/assets/menu/big-boy.webp",
+    dips: { worcester: 2, ketchup: 0 },
+    image: "/assets/menu/big-boy-box-2026-11.webp",
   },
   {
     id: "family-pack",
     kind: "menu",
     number: 4,
     name: "Family Pack",
-    description: "10 Chicken Strips + Pommes",
-    includes: "inkl. Worcestershire Sauce & Ketchup",
-    priceCents: 1600,
+    description: "10 Chicken Strips + 2× Pommes",
+    includes: "inkl. 2× Worcestershire Sauce & 2× Ketchup",
+    priceCents: 1800,
     strips: 10,
-    fries: 1,
-    image: "/assets/menu/family-pack-box.webp",
+    fries: 2,
+    dips: { worcester: 2, ketchup: 2 },
+    image: "/assets/menu/family-pack-2026-11.webp",
   },
 ] as const satisfies readonly CatalogItem[];
 

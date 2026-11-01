@@ -385,30 +385,6 @@ h3 {
   object-fit: cover;
   width: 100%;
 }
-.price-sticker {
-  position: absolute;
-  left: -10px;
-  bottom: -18px;
-  width: 118px;
-  height: 118px;
-  border-radius: 50%;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  background: var(--red);
-  outline: 3px dashed #fff9;
-  outline-offset: -9px;
-  transform: rotate(-10deg);
-  box-shadow: 6px 6px 0 #000;
-}
-.price-sticker strong {
-  font: 30px/1 var(--font-display);
-}
-.price-sticker span {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
 @media (min-width: 860px) {
   .hero {
     grid-template-columns: 1.15fr 1fr;
@@ -996,13 +972,6 @@ h3 {
   object-fit: contain;
   height: auto;
 }
-.price-sticker span {
-  display: block;
-  font-size: 10px;
-  line-height: 1.1;
-  max-width: 80px;
-  margin-inline: auto;
-}
 .pain-grid,
 .reason-grid,
 .usecase-grid {
@@ -1051,8 +1020,9 @@ h3 {
 }
 .menu-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  /* Unten links: oben stehen in den Menübildern Logo, Name und Preis. */
+  bottom: 12px;
+  left: 12px;
   padding: 6px 12px;
   background: var(--yellow);
   color: var(--black);
