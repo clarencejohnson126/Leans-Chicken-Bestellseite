@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { MenuImage } from "@/components/menu-image";
 import { pickupLocation, pilot, whatsappLink } from "@/config/business";
 import { menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
@@ -150,11 +150,9 @@ export function OrderForm({ days }: { days: DayOption[] }) {
           <div className="menu-grid">
             {menus.map((item) => (
               <div className="menu-card" key={item.id} data-selected={(quantities[item.id] ?? 0) > 0}>
-                <Image
+                <MenuImage
                   src={item.image}
                   alt={`${item.name}: ${item.description}`}
-                  width={1200}
-                  height={900}
                   sizes="(min-width: 960px) 520px, 90vw"
                 />
                 <div className="menu-card-body">

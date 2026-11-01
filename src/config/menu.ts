@@ -41,7 +41,7 @@ export const menus = [
     strips: 5,
     fries: 1,
     dips: { worcester: 1, ketchup: 1 },
-    image: "/assets/menu/crunch-combo-2026-11.webp",
+    image: "/assets/menu/crunch-combo-2026-11b.webp",
   },
   {
     id: "big-boy-box",
@@ -101,7 +101,7 @@ export const allergens = {
   confirmed: false,
   entries: [
     { name: "Chicken Strips (Cornflakes-Panade)", list: ["Gluten (Weizen, Gerste)", "Ei", "Milch"] },
-    { name: "Pommes", list: ["keine deklarationspflichtigen Allergene (Frittieröl prüfen)"] },
+    { name: "Pommes", list: ["keine deklarationspflichtigen Allergene (frittiert in Bio-Sonnenblumenöl)"] },
     { name: "Worcestershire Sauce", list: ["Fisch", "Gluten (Gerste)", "Sellerie"] },
     { name: "Ketchup", list: ["Sellerie (je nach Hersteller)"] },
     { name: "Mayo", list: ["Ei", "Senf"] },

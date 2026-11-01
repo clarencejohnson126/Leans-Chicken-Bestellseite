@@ -1157,7 +1157,7 @@ h3 {
 }
 @media (min-width: 1000px) {
   .reason-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -1758,4 +1758,74 @@ h3 {
 }
 .fulfillment-tabs .day-tab {
   font-size: 16px;
+}
+
+/* Menübilder: per Klick in voller Auflösung */
+.menu-zoom {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.menu-zoom img {
+  display: block;
+}
+.menu-zoom-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #000b;
+  color: #fff;
+  font-size: 18px;
+  opacity: 0.85;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.menu-zoom:hover .menu-zoom-hint,
+.menu-zoom:focus-visible .menu-zoom-hint {
+  opacity: 1;
+  transform: scale(1.1);
+}
+.lightbox {
+  /* Der globale Margin-Reset hebt sonst die Zentrierung des Dialogs auf. */
+  margin: auto;
+  max-width: min(96vw, 1448px);
+  max-height: 94vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  cursor: zoom-out;
+}
+.lightbox::backdrop {
+  background: #000d;
+}
+.lightbox img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(96vw, 1448px);
+  max-height: 94vh;
+  box-shadow: 0 20px 60px #000;
+}
+.lightbox-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
 }

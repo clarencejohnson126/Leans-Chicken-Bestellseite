@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MenuImage } from "@/components/menu-image";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { business, pickupLocation, pilot, taxNote } from "@/config/business";
 import { allergens, menus, orderRules, sides } from "@/config/menu";
@@ -36,6 +37,14 @@ const reasons = [
   {
     title: "Cornflakes-Crunch",
     text: "Unsere eigene Cornflakes-Panade. Knackt beim ersten Biss und bleibt crispy, weil der Weg zu dir kurz ist.",
+  },
+  {
+    title: "Himalaya-Salz",
+    text: "Kein billiges Industriesalz. Wir würzen mit echtem Himalaya-Salz.",
+  },
+  {
+    title: "Bio-Sonnenblumenöl",
+    text: "Kein Rapsöl. Wir frittieren ausschließlich in Bio-Sonnenblumenöl.",
   },
   {
     title: "Signature Sauce",
@@ -127,8 +136,8 @@ export default function Home() {
           <Image
             src={featured.image}
             alt={`${featured.name}: ${featured.description}`}
-            width={1200}
-            height={900}
+            width={1448}
+            height={1086}
             priority
             sizes="(min-width: 860px) 520px, 92vw"
           />
@@ -202,7 +211,7 @@ export default function Home() {
       {/* 3 · Lösung / USPs */}
       <section className="wrap section section-tight">
         <p className="eyebrow">Warum Lean&apos;s</p>
-        <h2>Sechs Gründe, warum du nicht mehr wechselst</h2>
+        <h2>Acht Gründe, warum du nicht mehr wechselst</h2>
         <div className="reason-grid">
           {reasons.map((r, i) => (
             <div className="reason" key={r.title}>
@@ -221,17 +230,16 @@ export default function Home() {
           Frisch. Heiß. <span className="brush">Unschlagbar.</span>
         </h2>
         <p className="lead section-lead">
-          Vier Menüs, alle mit Signature Sauce. Kein Schnickschnack – nur Chicken, das knackt.
+          Vier Menüs, alle mit Signature Sauce. Gewürzt mit Himalaya-Salz, frittiert in Bio-Sonnenblumenöl. Kein
+          Schnickschnack – nur Chicken, das knackt.
         </p>
         <div className="menu-list">
           {menus.map((item) => (
             <div className="menu-card" key={item.id}>
               <div className="menu-card-media">
-                <Image
+                <MenuImage
                   src={item.image}
                   alt={`${item.name}: ${item.description}`}
-                  width={1200}
-                  height={900}
                   sizes="(min-width: 760px) 560px, 92vw"
                 />
                 {badges[item.id] && <span className="menu-badge">{badges[item.id]}</span>}
