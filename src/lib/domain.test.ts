@@ -71,7 +71,11 @@ describe("Preise laut Katalog", () => {
     const cart = priceCart({ "crunch-combo": 1, ketchup: 1 });
     expect(cart.totalCents).toBe(1100);
     expect(cart.meetsMinimum).toBe(false);
-    expect(cart.missingCents).toBe(400);
+    expect(cart.missingCents).toBe(300);
+  });
+
+  it("liefert eine einzelne Big Boy Box ohne Aufstocken", () => {
+    expect(priceCart({ "big-boy-box": 1 }).meetsMinimum).toBe(true);
   });
 
   it("lehnt negative oder gebrochene Mengen ab", () => {

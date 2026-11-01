@@ -87,7 +87,7 @@ export function findItem(id: string): CatalogItem | undefined {
 }
 
 export const orderRules = {
-  minOrderCents: 1500,
+  minOrderCents: 1400,
   // Abholung hat keinen Lieferweg, deshalb kein Mindestbestellwert (ein Menü reicht).
   pickupMinOrderCents: 0,
   // Pro Position, damit Tippfehler wie 50 × Family Pack nicht durchrutschen.
