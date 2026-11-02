@@ -1,6 +1,4 @@
 import { createSign } from "node:crypto";
-import { findItem } from "@/config/menu";
-import { depositOf } from "@/lib/pricing";
 import type { FulfillmentStatus, OrderSummary } from "@/server/ports";
 
 // Google-Sheets-Spiegel der bezahlten Bestellungen. Supabase bleibt die Wahrheit; das Sheet ist
@@ -88,11 +86,12 @@ export function orderToRow(order: OrderSummary, receivedAt: Date): (string | num
     order.customerNote,
     order.source,
     order.id,
+    // Getränke sind die Positionen mit Pfand. Ohne @/-Imports, weil scripts/sheets-setup.mts diese Datei lädt.
     order.items
-      .filter((i) => findItem(i.itemId)?.kind === "drink")
+      .filter((i) => i.depositCents > 0)
       .map((i) => `${i.quantity}× ${i.name}`)
       .join(", "),
-    depositOf(order.items) / 100,
+    order.items.reduce((n, i) => n + i.depositCents, 0) / 100,
   ];
 }
 
