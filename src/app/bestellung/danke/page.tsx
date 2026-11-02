@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { pickupLocation } from "@/config/business";
+import { drinkRules } from "@/config/menu";
 import { formatEuro, formatWindow } from "@/lib/format";
+import { depositOf } from "@/lib/pricing";
 import { formatDay } from "@/lib/time";
 import { loadPaymentLedger } from "@/server/integrations";
 import type { OrderSummary } from "@/server/ports";
@@ -73,6 +75,9 @@ async function OrderDetails({ searchParams }: Pick<PageProps<"/bestellung/danke"
             <dt>Summe</dt>
             <dd>
               <strong>{formatEuro(order.totalCents)}</strong>
+              {depositOf(order.items) > 0 && (
+                <span className="hint"> inkl. {formatEuro(depositOf(order.items))} {drinkRules.depositLabel}</span>
+              )}
             </dd>
           </dl>
         </>

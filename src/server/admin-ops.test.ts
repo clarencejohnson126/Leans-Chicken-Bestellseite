@@ -32,6 +32,7 @@ function setup(
     },
     ordersPaused: async () => false,
     setOrdersPaused: async () => {},
+    setDrinkStock: async () => {},
   };
   const payments = {
     createCheckout: vi.fn(),

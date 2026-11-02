@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { itemIds, menus, orderRules, type ItemId } from "@/config/menu";
+import { drinkIds, drinksEnabled, itemIds, menus, orderRules, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
 
 /** Normalisiert Telefonnummern auf E.164 (+49… als Standard). Gibt null zurück, wenn ungültig. */
@@ -33,6 +33,10 @@ export const itemsSchema = z
   .refine(
     (items) => !orderRules.requireMenu || menuQuantity(items) > 0,
     "Bitte wähle mindestens ein Menü.",
+  )
+  .refine(
+    (items) => drinksEnabled() || drinkIds.every((id) => !items[id]),
+    "Getränke sind noch nicht bestellbar.",
   );
 
 const text = (max: number) => z.string().trim().max(max);

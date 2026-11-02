@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { OrderForm, type DayOption } from "@/components/order-form";
+import { OrderForm, type DayOption, type DrinkAvailability } from "@/components/order-form";
 import { taxNote } from "@/config/business";
+import { drinkIds, drinksEnabled, type ItemId } from "@/config/menu";
 import { listDeliveryDays } from "@/lib/slots";
 import { formatDay } from "@/lib/time";
 import { CallButton } from "@/components/call-button";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: "Bestellen | Lean's Crispy Chicken",
 };
 
-export default function OrderPage() {
+export default function OrderPage({ searchParams }: PageProps<"/bestellen">) {
   return (
     <main className="wrap order-page">
       <p className="eyebrow">Vorbestellen</p>
@@ -24,14 +25,14 @@ export default function OrderPage() {
         Menü wählen, Lieferzeit aussuchen, bezahlen. Wir liefern in deinem Zeitfenster. {taxNote}
       </p>
       <Suspense fallback={<p className="hint" style={{ marginTop: 28 }}>Lieferzeiten werden geladen …</p>}>
-        <LiveOrderForm />
+        <LiveOrderForm searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
 /** Verfügbarkeit hängt von Uhrzeit und Buchungen ab und wird deshalb pro Anfrage berechnet. */
-async function LiveOrderForm() {
+async function LiveOrderForm({ searchParams }: Pick<PageProps<"/bestellen">, "searchParams">) {
   await connection();
   const now = new Date();
   if (await loadAdminStore()?.ordersPaused()) {
@@ -65,5 +66,16 @@ async function LiveOrderForm() {
     })),
   }));
 
-  return <OrderForm days={days} />;
+  // Getränke nur nach Freigabe; ohne Bestandsdaten gilt alles als ausverkauft statt unbegrenzt.
+  let drinkStock: DrinkAvailability = null;
+  if (drinksEnabled()) {
+    const stock = deps ? await deps.store.drinkStock().catch(() => []) : [];
+    drinkStock = Object.fromEntries(drinkIds.map((id) => [id, stock.find((s) => s.itemId === id)?.remaining ?? 0]));
+  }
+  // "Zum Warenkorb hinzufügen" auf der Startseite verlinkt auf /bestellen?add=<id>.
+  const { add } = await searchParams;
+  const initialItems: Partial<Record<ItemId, number>> =
+    typeof add === "string" && drinkStock && (drinkStock[add as ItemId] ?? 0) > 0 ? { [add]: 1 } : {};
+
+  return <OrderForm days={days} drinkStock={drinkStock} initialItems={initialItems} />;
 }

@@ -80,6 +80,18 @@ describe("Preise laut Katalog", () => {
 
   it("lehnt negative oder gebrochene Mengen ab", () => {
     expect(() => priceCart({ basic: -1 })).toThrow();
+  });
+
+  it("weist Pfand getrennt aus und rechnet ihn nicht zum Mindestbestellwert", () => {
+    const cart = priceCart({ "crunch-combo": 1, "brambacher-himbeere-zitrone": 1 });
+    expect(cart.goodsCents).toBe(1335);
+    expect(cart.depositCents).toBe(15);
+    expect(cart.totalCents).toBe(1350); // 10,00 + 3,35 + 0,15 Pfand
+    expect(cart.bottles).toBe(1);
+    expect(cart.meetsMinimum).toBe(false);
+    expect(cart.missingCents).toBe(65);
+    expect(priceCart({ "crunch-combo": 1, "brambacher-pink-grapefruit": 2 }).meetsMinimum).toBe(true);
+    expect(priceCart({ "family-pack": 1 }).depositCents).toBe(0);
     expect(() => priceCart({ basic: 1.5 })).toThrow();
   });
 });

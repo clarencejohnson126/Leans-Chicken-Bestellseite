@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { business, pickupLocation } from "@/config/business";
+import { drinkRules } from "@/config/menu";
 import { formatWindow } from "@/lib/format";
 import { stripeProductId } from "@/lib/stripe-ids";
 import { formatDay } from "@/lib/time";
@@ -36,14 +37,29 @@ export function createStripePayments(
           client_reference_id: order.id,
           metadata,
           payment_intent_data: { metadata, description: `${business.name} ${order.orderNumber}` },
-          line_items: order.lines.map((line) => ({
-            quantity: line.quantity,
-            price_data: {
-              currency: "eur",
-              product: stripeProductId(line.itemId),
-              unit_amount: line.unitPriceCents,
+          line_items: order.lines.flatMap((line) => [
+            {
+              quantity: line.quantity,
+              price_data: {
+                currency: "eur",
+                product: stripeProductId(line.itemId),
+                unit_amount: line.unitPriceCents,
+              },
             },
-          })),
+            // Pfand als eigene Zeile, damit er auf Beleg und in der Auswertung vom Umsatz getrennt bleibt.
+            ...(line.unitDepositCents > 0
+              ? [
+                  {
+                    quantity: line.quantity,
+                    price_data: {
+                      currency: "eur",
+                      product_data: { name: `${drinkRules.depositLabel} ${line.name}` },
+                      unit_amount: line.unitDepositCents,
+                    },
+                  },
+                ]
+              : []),
+          ]),
           custom_text: {
             submit: {
               message:

@@ -10,6 +10,7 @@ import { business, trackingUrl, whatsappTo } from "@/config/business";
 import { findItem } from "@/config/menu";
 import { schedule } from "@/config/schedule";
 import { formatEuro, formatWindow } from "@/lib/format";
+import { depositOf } from "@/lib/pricing";
 import { listDeliveryDays } from "@/lib/slots";
 import { addDays, formatDay, isoWeekday, localParts } from "@/lib/time";
 import { requireAdmin } from "@/server/admin-auth";
@@ -75,6 +76,7 @@ function production(orders: AdminOrder[]) {
   let strips = 0;
   let fries = 0;
   const sauces = { "Worcestershire Sauce": 0, Ketchup: 0, Mayo: 0 };
+  const drinks = new Map<string, number>();
   for (const order of orders.filter(isActive)) {
     strips += order.strips;
     for (const line of order.items) {
@@ -88,9 +90,17 @@ function production(orders: AdminOrder[]) {
       if (line.itemId === "worcester") sauces["Worcestershire Sauce"] += line.quantity;
       if (line.itemId === "ketchup") sauces.Ketchup += line.quantity;
       if (line.itemId === "mayo") sauces.Mayo += line.quantity;
+      if (item?.kind === "drink") drinks.set(line.name, (drinks.get(line.name) ?? 0) + line.quantity);
     }
   }
-  return { counts: [...counts], strips, fries, sauces: Object.entries(sauces).filter(([, n]) => n > 0) };
+  return {
+    counts: [...counts],
+    strips,
+    fries,
+    sauces: Object.entries(sauces).filter(([, n]) => n > 0),
+    drinks: [...drinks],
+    bottles: [...drinks.values()].reduce((n, q) => n + q, 0),
+  };
 }
 
 function defaultDay(today: string) {
@@ -126,7 +136,10 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
 
   const [orders, paused] = await Promise.all([store.ordersForDate(day), store.ordersPaused()]);
   const active = orders.filter(isActive);
-  const total = active.reduce((n, o) => n + o.totalCents, 0);
+  // Umsatz ohne Pfand: Pfand ist durchlaufender Posten und wird separat gezeigt.
+  const deposit = active.reduce((n, o) => n + depositOf(o.items), 0);
+  const total = active.reduce((n, o) => n + o.totalCents, 0) - deposit;
+  const dayDrinks = production(orders);
   const windows = schedule.windows.map((w) => ({
     ...w,
     orders: orders.filter((o) => o.slotStart === w.start),
@@ -145,6 +158,9 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
         <div className="admin-top-actions">
           <Link href="/admin/whatsapp" className="btn btn-whatsapp">
             + WhatsApp-Bestellung
+          </Link>
+          <Link href="/admin/getraenke" className="btn btn-ghost">
+            Getränke
           </Link>
           <Link href="/admin/umfrage" className="btn btn-ghost">
             Umfrage
@@ -181,6 +197,11 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
         <div>
           <b>{formatEuro(total)}</b> Umsatz
         </div>
+        {dayDrinks.bottles > 0 && (
+          <div>
+            <b>{dayDrinks.bottles}</b> Getränke · {formatEuro(deposit)} Pfand
+          </div>
+        )}
       </section>
 
       {windows.map((w) => {
@@ -193,12 +214,19 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
                 {p.strips} / {schedule.maxStripsPerWindow} Strips
               </span>
             </header>
-            {p.strips > 0 && (
+            {(p.strips > 0 || p.bottles > 0) && (
               <p className="admin-production">
                 {p.counts.map(([name, n]) => `${n}× ${name}`).join(" · ")}
                 {p.fries > 0 && ` · ${p.fries}× Pommes`}
                 {p.sauces.length > 0 && <br />}
                 {p.sauces.map(([name, n]) => `${n}× ${name}`).join(" · ")}
+                {p.bottles > 0 && (
+                  <>
+                    <br />
+                    {p.drinks.map(([name, n]) => `${n}× ${name}`).join(" · ")} ·{" "}
+                    <b>Getränke gesamt: {p.bottles} Flaschen</b>
+                  </>
+                )}
               </p>
             )}
             {w.orders.length === 0 ? (

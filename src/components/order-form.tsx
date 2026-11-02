@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DrinkCard } from "@/components/drink-card";
 import { MenuImage } from "@/components/menu-image";
 import { pickupLocation, pilot, whatsappLink } from "@/config/business";
-import { menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
+import { drinkRules, drinks, menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
 import { formatEuro, formatWindow } from "@/lib/format";
 import { priceCart, type FulfillmentType } from "@/lib/pricing";
@@ -41,9 +42,20 @@ const emptyCustomer = {
   addressNote: "",
 };
 
-export function OrderForm({ days }: { days: DayOption[] }) {
+/** Freie Flaschen je Getränk; null, solange Getränke nicht freigegeben sind. */
+export type DrinkAvailability = Partial<Record<ItemId, number>> | null;
+
+export function OrderForm({
+  days,
+  drinkStock = null,
+  initialItems = {},
+}: {
+  days: DayOption[];
+  drinkStock?: DrinkAvailability;
+  initialItems?: Partial<Record<ItemId, number>>;
+}) {
   const firstOpenDay = days.find((d) => d.slots.some((s) => s.open && s.remainingStrips > 0));
-  const [quantities, setQuantities] = useState<Partial<Record<ItemId, number>>>({});
+  const [quantities, setQuantities] = useState<Partial<Record<ItemId, number>>>(initialItems);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("delivery");
   const [day, setDay] = useState(firstOpenDay?.date ?? days[0]?.date ?? "");
   const [slotId, setSlotId] = useState("");
@@ -69,9 +81,11 @@ export function OrderForm({ days }: { days: DayOption[] }) {
     });
   }
 
+  const maxFor = (id: ItemId) => Math.min(orderRules.maxQuantityPerItem, drinkStock?.[id] ?? orderRules.maxQuantityPerItem);
+
   function changeQuantity(id: ItemId, delta: number) {
     setQuantities((q) => {
-      const next = Math.min(orderRules.maxQuantityPerItem, Math.max(0, (q[id] ?? 0) + delta));
+      const next = Math.min(maxFor(id), Math.max(0, (q[id] ?? 0) + delta));
       return { ...q, [id]: next };
     });
     clearError("items");
@@ -171,6 +185,23 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               </div>
             ))}
           </div>
+          {drinkStock && cart.hasMenu && cart.bottles === 0 && (
+            <div className="drink-upsell">
+              <p>
+                <strong>Mach dein Menü komplett! 🥤</strong>
+              </p>
+              <div className="drink-upsell-actions">
+                {drinks
+                  .filter((d) => (drinkStock[d.id] ?? 0) > 0)
+                  .map((d) => (
+                    <button type="button" key={d.id} className="btn btn-ghost" onClick={() => changeQuantity(d.id, 1)}>
+                      + {d.name}, {d.size} · {formatEuro(d.priceCents)}
+                    </button>
+                  ))}
+              </div>
+              <p className="hint">Optional. zzgl. {formatEuro(drinks[0].depositCents)} {drinkRules.depositLabel} je Flasche.</p>
+            </div>
+          )}
           <h3 className="sides-title">Side Orders</h3>
           {sides.map((item) => (
             <div className="sauce-row" key={item.id}>
@@ -183,17 +214,40 @@ export function OrderForm({ days }: { days: DayOption[] }) {
               <Stepper item={item} qty={quantities[item.id] ?? 0} onChange={changeQuantity} />
             </div>
           ))}
+          {drinkStock && (
+            <div className="drinks-block" id="drinks">
+              <h3 className="sides-title">Drinks &amp; Refreshments</h3>
+              <p className="hint">Crunch braucht Erfrischung.</p>
+              <div className="drink-grid">
+                {drinks.map((item) => {
+                  const qty = quantities[item.id] ?? 0;
+                  const soldOut = (drinkStock[item.id] ?? 0) <= 0;
+                  return (
+                    <DrinkCard key={item.id} item={item} soldOut={soldOut} selected={qty > 0}>
+                      {soldOut ? null : qty === 0 ? (
+                        <button type="button" className="btn btn-red drink-add" onClick={() => changeQuantity(item.id, 1)}>
+                          Zum Warenkorb hinzufügen
+                        </button>
+                      ) : (
+                        <Stepper item={item} qty={qty} max={maxFor(item.id)} onChange={changeQuantity} />
+                      )}
+                    </DrinkCard>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {errors.items && <p className="field-error">{errors.items}</p>}
           {cart.lines.length > 0 && !cart.hasMenu && (
             <p className="notice" style={{ marginTop: 14 }}>
-              Side Orders liefern wir nur zusammen mit mindestens einem Menü.
+              Side Orders und Getränke gibt es nur zusammen mit mindestens einem Menü.
             </p>
           )}
           {cart.hasMenu && !cart.meetsMinimum && (
             <div className="notice" style={{ marginTop: 14 }}>
               <p>
                 Mindestbestellwert für die Lieferung {formatEuro(orderRules.minOrderCents)}. Noch{" "}
-                {formatEuro(cart.missingCents)} bis zur Lieferung, oder du holst ab, dann gibt es keinen
+                {formatEuro(cart.missingCents)} bis zur Lieferung{cart.depositCents > 0 && " (Pfand zählt nicht mit)"}, oder du holst ab, dann gibt es keinen
                 Mindestbestellwert.
               </p>
               <button type="button" className="btn btn-ghost" onClick={() => setFulfillment("pickup")}>
@@ -423,7 +477,10 @@ export function OrderForm({ days }: { days: DayOption[] }) {
           <div className="summary-total">
             <strong>{formatEuro(cart.totalCents)}</strong>
             <span>
-              {cart.strips} Strips · {pickup ? "Abholung" : "Lieferung gratis"}
+              {cart.strips} Strips
+              {cart.bottles > 0 && ` · ${cart.bottles} ${cart.bottles === 1 ? "Getränk" : "Getränke"}`} ·{" "}
+              {pickup ? "Abholung" : "Lieferung gratis"}
+              {cart.depositCents > 0 && ` · inkl. ${formatEuro(cart.depositCents)} Pfand`}
             </span>
           </div>
           <button type="submit" className="btn btn-red" disabled={!canSubmit}>
@@ -438,10 +495,12 @@ export function OrderForm({ days }: { days: DayOption[] }) {
 function Stepper({
   item,
   qty,
+  max = orderRules.maxQuantityPerItem,
   onChange,
 }: {
   item: CatalogItem;
   qty: number;
+  max?: number;
   onChange: (id: ItemId, delta: number) => void;
 }) {
   const id = item.id as ItemId;
@@ -457,7 +516,7 @@ function Stepper({
         type="button"
         className="plus"
         onClick={() => onChange(id, 1)}
-        disabled={qty >= orderRules.maxQuantityPerItem}
+        disabled={qty >= max}
         aria-label={`${item.name} hinzufügen`}
       >
         +

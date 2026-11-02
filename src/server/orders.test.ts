@@ -1,11 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { orderRequestSchema } from "@/lib/validation";
 import { createOrder } from "@/server/orders";
 import type { OrderDeps, OrderStore, PendingOrderInput, StoredOrder } from "@/server/ports";
 
 // In-Memory-Store nur für Tests: bildet die atomare Kapazitätsprüfung der Datenbank nach.
-function memoryStore(): OrderStore & { orders: (StoredOrder & { status: string })[] } {
+function memoryStore(
+  drinkStock: Record<string, number> = {},
+): OrderStore & { orders: (StoredOrder & { status: string })[] } {
   const orders: (StoredOrder & { status: string })[] = [];
+  const committed = (itemId: string) =>
+    orders
+      .filter((o) => o.status === "pending")
+      .flatMap((o) => o.lines)
+      .filter((l) => l.itemId === itemId)
+      .reduce((n, l) => n + l.quantity, 0);
   const reserved = (slotId: string) =>
     orders.filter((o) => o.slot.id === slotId && o.status === "pending").reduce((n, o) => n + o.strips, 0);
   return {
@@ -16,6 +24,11 @@ function memoryStore(): OrderStore & { orders: (StoredOrder & { status: string }
     async createPendingOrder(input: PendingOrderInput) {
       if (reserved(input.slot.id) + input.strips > input.maxStripsPerSlot) {
         return { ok: false, reason: "capacity" };
+      }
+      for (const line of input.lines.filter((l) => l.kind === "drink")) {
+        if (committed(line.itemId) + line.quantity > (drinkStock[line.itemId] ?? 0)) {
+          return { ok: false, reason: "sold_out", itemId: line.itemId };
+        }
       }
       const order = { ...input, id: `id-${orders.length + 1}`, orderNumber: `LEAN-1028-${String(orders.length + 1).padStart(3, "0")}`, status: "pending" };
       orders.push(order);
@@ -34,6 +47,15 @@ function memoryStore(): OrderStore & { orders: (StoredOrder & { status: string }
     async expireOrder(orderId) {
       const o = orders.find((x) => x.id === orderId);
       if (o?.status === "pending") o.status = "expired";
+    },
+    async drinkStock() {
+      return Object.entries(drinkStock).map(([itemId, stock]) => ({
+        itemId,
+        stock,
+        available: true,
+        committed: committed(itemId),
+        remaining: stock - committed(itemId),
+      }));
     },
   };
 }
@@ -126,6 +148,45 @@ describe("createOrder", () => {
     expect(result).toMatchObject({ ok: true });
     expect(d.payments.expireCheckout).toHaveBeenCalledWith("cs_id-1");
     expect(d.store.orders[0].status).toBe("expired");
+  });
+
+  describe("Getränke", () => {
+    afterEach(() => vi.unstubAllEnvs());
+    const himbeere = "brambacher-himbeere-zitrone";
+    const grapefruit = "brambacher-pink-grapefruit";
+
+    it("sind vor der Freigabe von Preis und Pfand nicht bestellbar", () => {
+      vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "");
+      expect(() => request({ "crunch-combo": 1, [himbeere]: 1 })).toThrow(/noch nicht bestellbar/);
+    });
+
+    it("werden mit Pfand berechnet, beide Sorten in einer Bestellung", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "1");
+      const d = deps(memoryStore({ [himbeere]: 20, [grapefruit]: 20 }));
+      const result = await createOrder(request({ "crunch-combo": 2, [himbeere]: 2, [grapefruit]: 1 }), "website", d, now, noop);
+      expect(result).toMatchObject({ ok: true });
+      // 2 × 10,00 + 3 × 3,35 + 3 × 0,15 Pfand
+      expect(d.store.orders[0].totalCents).toBe(2000 + 3 * 335 + 3 * 15);
+      expect(d.store.orders[0].lines.find((l) => l.itemId === himbeere)).toMatchObject({
+        quantity: 2,
+        unitPriceCents: 335,
+        unitDepositCents: 15,
+      });
+    });
+
+    it("lehnen ab, wenn die Sorte ausverkauft ist, und zählen offene Reservierungen mit", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "1");
+      const d = deps(memoryStore({ [himbeere]: 3 }));
+      expect(await createOrder(request({ "big-boy-box": 1, [himbeere]: 2 }), "website", d, now, noop)).toMatchObject({ ok: true });
+      const second = await createOrder(request({ "big-boy-box": 1, [himbeere]: 2 }), "website", d, now, noop);
+      expect(second).toMatchObject({ ok: false, code: "sold_out" });
+      expect(d.store.orders).toHaveLength(1);
+    });
+
+    it("brauchen weiterhin ein Menü", () => {
+      vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "1");
+      expect(() => request({ [himbeere]: 2 })).toThrow(/mindestens ein Menü/);
+    });
   });
 
   it("gibt die Kapazität frei, wenn der Checkout scheitert", async () => {

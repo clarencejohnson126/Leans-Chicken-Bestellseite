@@ -3,7 +3,7 @@
 
 export type CatalogItem = {
   id: string;
-  kind: "menu" | "side";
+  kind: "menu" | "side" | "drink";
   number?: number;
   name: string;
   description: string;
@@ -14,6 +14,9 @@ export type CatalogItem = {
   // Im Menü enthaltene Dips, für die Produktionsübersicht im Admin.
   dips?: { worcester: number; ketchup: number };
   image?: string;
+  // Nur Getränke: Flaschengröße und Pfand je Flasche. Pfand ist kein Umsatz und wird separat ausgewiesen.
+  size?: string;
+  depositCents?: number;
 };
 
 export const menus = [
@@ -78,8 +81,59 @@ export const sides = [
   { id: "mayo", kind: "side", name: "Mayo", description: "Extra Dip", priceCents: 100, strips: 0, fries: 0 },
 ] as const satisfies readonly CatalogItem[];
 
-export const catalog: readonly CatalogItem[] = [...menus, ...sides];
-export type ItemId = (typeof menus)[number]["id"] | (typeof sides)[number]["id"];
+// Getränke: zusätzliche Produkte, kein Bestandteil der Menüs. Preise und Pfand sind vorläufig
+// (siehe drinkRules); Bestand und "ausverkauft" pflegt der Admin unter /admin/getraenke.
+export const drinks = [
+  {
+    id: "brambacher-himbeere-zitrone",
+    kind: "drink",
+    name: "Himbeere-Zitrone",
+    description: "Bad Brambacher Garten-Limonade Himbeere-Zitrone",
+    // 3,50 € inkl. Pfand laut Betreiber (02.11.2026): 3,35 € + 0,15 € Mehrwegpfand.
+    priceCents: 335,
+    depositCents: 15,
+    size: "0,5 l",
+    strips: 0,
+    fries: 0,
+    image: "/assets/drinks/brambacher-himbeere-zitrone-0-5l.webp",
+  },
+  {
+    id: "brambacher-pink-grapefruit",
+    kind: "drink",
+    name: "Pink Grapefruit",
+    description: "Bad Brambacher Garten-Limonade Pink Grapefruit",
+    // 3,50 € inkl. Pfand laut Betreiber (02.11.2026): 3,35 € + 0,15 € Mehrwegpfand.
+    priceCents: 335,
+    depositCents: 15,
+    size: "0,5 l",
+    strips: 0,
+    fries: 0,
+    // Noch kein freigegebenes Produktbild, die Karte zeigt einen Platzhalter.
+  },
+] as const satisfies readonly CatalogItem[];
+
+export const drinkRules = {
+  brand: "Bad Brambacher",
+  // 0,5-l-Glas-Mehrwegflasche (Brunnen-Mehrweg, 0,15 €). Vor Freigabe mit dem Lieferschein abgleichen.
+  depositLabel: "Mehrwegpfand",
+  pricesConfirmed: true,
+  depositConfirmed: false,
+} as const;
+
+// Getränke sind erst bestellbar, wenn Preis und Pfand bestätigt sind. Zum Testen lokal oder in einer
+// Vercel-Preview NEXT_PUBLIC_DRINKS_PREVIEW=1 setzen.
+export function drinksEnabled() {
+  return (drinkRules.pricesConfirmed && drinkRules.depositConfirmed) || process.env.NEXT_PUBLIC_DRINKS_PREVIEW === "1";
+}
+export const drinksPreliminary = !(drinkRules.pricesConfirmed && drinkRules.depositConfirmed);
+
+export const catalog: readonly CatalogItem[] = [...menus, ...sides, ...drinks];
+export type ItemId =
+  | (typeof menus)[number]["id"]
+  | (typeof sides)[number]["id"]
+  | (typeof drinks)[number]["id"];
+export type DrinkId = (typeof drinks)[number]["id"];
+export const drinkIds = drinks.map((d) => d.id) as DrinkId[];
 export const itemIds = catalog.map((i) => i.id) as [ItemId, ...ItemId[]];
 
 export function findItem(id: string): CatalogItem | undefined {
@@ -105,5 +159,6 @@ export const allergens = {
     { name: "Worcestershire Sauce", list: ["Fisch", "Gluten (Gerste)", "Sellerie"] },
     { name: "Ketchup", list: ["Sellerie (je nach Hersteller)"] },
     { name: "Mayo", list: ["Ei", "Senf"] },
+    { name: "Garten-Limonaden (Bad Brambacher)", list: ["keine deklarationspflichtigen Allergene laut Hersteller (prüfen)"] },
   ],
 } as const;

@@ -36,7 +36,11 @@ export type StoredOrder = PendingOrderInput & {
 
 export type CreatePendingResult =
   | { ok: true; order: StoredOrder }
-  | { ok: false; reason: "capacity" };
+  | { ok: false; reason: "capacity" }
+  | { ok: false; reason: "sold_out"; itemId: string };
+
+/** Getränkebestand: stock = insgesamt online verkaufbar, committed = in aktiven Bestellungen. */
+export type DrinkStock = { itemId: string; stock: number; available: boolean; committed: number; remaining: number };
 
 export type CheckoutSession = {
   sessionId: string;
@@ -56,6 +60,7 @@ export interface OrderStore {
   staleCheckouts(now: Date): Promise<{ orderId: string; sessionId: string }[]>;
   /** Markiert eine unbezahlte Bestellung als abgelaufen (nur aus "pending"). */
   expireOrder(orderId: string, reason: string): Promise<void>;
+  drinkStock(): Promise<DrinkStock[]>;
 }
 
 export interface PaymentProvider {
@@ -95,7 +100,8 @@ export type OrderSummary = {
   slotEnd: string; // HH:MM
   strips: number;
   totalCents: number;
-  items: { itemId: string; name: string; quantity: number; lineTotalCents: number }[];
+  /** lineTotalCents ohne Pfand; depositCents = Pfand der ganzen Position. totalCents enthält beides. */
+  items: { itemId: string; name: string; quantity: number; lineTotalCents: number; depositCents: number }[];
   /** Schlüssel für den öffentlichen Verfolgungslink. */
   trackingToken: string;
 };
@@ -154,6 +160,8 @@ export interface AdminStore {
   markRefunded(orderId: string, refundId: string, actor: string): Promise<AdminOrder | null>;
   ordersPaused(): Promise<boolean>;
   setOrdersPaused(paused: boolean, actor: string): Promise<void>;
+  /** Setzt, wie viele Flaschen ab jetzt noch verkaufbar sind (stock = remaining + committed). */
+  setDrinkStock(itemId: string, remaining: number, available: boolean, actor: string): Promise<void>;
 }
 
 /** Öffentliche Bestellverfolgung. Liefert nur, was der Kunde über den Link sehen darf. */

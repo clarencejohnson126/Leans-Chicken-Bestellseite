@@ -1,3 +1,4 @@
+import { findItem } from "@/config/menu";
 import { schedule } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
 import { minOrderCents, priceCart } from "@/lib/pricing";
@@ -16,7 +17,7 @@ export type CreateOrderResult =
   | { ok: true; orderNumber: string; checkoutUrl: string }
   | {
       ok: false;
-      code: "invalid_slot" | "slot_closed" | "below_minimum" | "slot_full" | "checkout_failed";
+      code: "invalid_slot" | "slot_closed" | "below_minimum" | "slot_full" | "sold_out" | "checkout_failed";
       message: string;
       alternative?: Pick<Slot, "id" | "date" | "start" | "end">;
     };
@@ -76,6 +77,15 @@ export async function createOrder(
       now.getTime() + (source === "whatsapp" ? schedule.whatsappHoldMinutes : schedule.pendingHoldMinutes) * 60_000,
     ),
   });
+
+  if (!created.ok && created.reason === "sold_out") {
+    log("order_rejected", { reason: "sold_out", itemId: created.itemId });
+    return {
+      ok: false,
+      code: "sold_out",
+      message: `${findItem(created.itemId)?.name ?? "Dieses Getränk"} ist leider ausverkauft (oder nicht mehr in deiner Menge da). Bitte passe die Getränke an.`,
+    };
+  }
 
   if (!created.ok) {
     const slotIds = listDeliveryDays(now).flatMap((d) => d.slots.map((s) => s.id));

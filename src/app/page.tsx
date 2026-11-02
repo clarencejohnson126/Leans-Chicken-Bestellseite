@@ -1,13 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { CallButton } from "@/components/call-button";
+import { DrinkCard } from "@/components/drink-card";
 import { MenuImage } from "@/components/menu-image";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { business, phoneHref, pickupLocation, pilot, taxNote } from "@/config/business";
-import { allergens, menus, orderRules, sides } from "@/config/menu";
+import { allergens, drinks, drinksEnabled, menus, orderRules, sides, type CatalogItem } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
+import { loadOrderDeps } from "@/server/integrations";
 
 const weekdayNames = ["", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const deliveryDays = schedule.deliveryWeekdays.map((d) => weekdayNames[d]).join(" · ");
@@ -276,6 +280,22 @@ export default function Home() {
             Mindestbestellwert {formatEuro(orderRules.minOrderCents)} · {taxNote}
           </p>
         </div>
+        {drinksEnabled() && (
+          <div className="drinks-block">
+            <p className="eyebrow">Drinks &amp; Refreshments</p>
+            <h3 className="drinks-title">Crunch braucht Erfrischung.</h3>
+            <div className="drink-grid">
+              {drinks.map((item) => (
+                <Suspense key={item.id} fallback={<HomeDrink item={item} soldOut={false} />}>
+                  <LiveHomeDrink item={item} />
+                </Suspense>
+              ))}
+            </div>
+            <p className="hint" style={{ marginTop: 14 }}>
+              Getränke gibt es zu jedem Menü dazu. Das Pfand bekommst du bei Rückgabe der Flasche zurück.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* 5 · Social Proof */}
@@ -543,4 +563,24 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+function HomeDrink({ item, soldOut }: { item: CatalogItem; soldOut: boolean }) {
+  return (
+    <DrinkCard item={item} soldOut={soldOut}>
+      {!soldOut && (
+        <Link href={`/bestellen?add=${item.id}#drinks`} className="btn btn-red drink-add">
+          Zum Warenkorb hinzufügen
+        </Link>
+      )}
+    </DrinkCard>
+  );
+}
+
+/** Bestand ändert sich mit jeder Bestellung, deshalb pro Anfrage statt im statischen Teil der Seite. */
+async function LiveHomeDrink({ item }: { item: CatalogItem }) {
+  await connection();
+  const stock = await loadOrderDeps()?.store.drinkStock().catch(() => null);
+  const remaining = stock?.find((s) => s.itemId === item.id)?.remaining;
+  return <HomeDrink item={item} soldOut={remaining !== undefined && remaining <= 0} />;
 }

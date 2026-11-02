@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { itemIds } from "@/config/menu";
+import { drinkIds, itemIds, type DrinkId } from "@/config/menu";
 import { formatEuro } from "@/lib/format";
 import { priceCart } from "@/lib/pricing";
 import { orderRequestSchema } from "@/lib/validation";
@@ -39,6 +39,16 @@ export async function setPausedAction(formData: FormData) {
   const store = loadAdminStore();
   if (!store) return;
   await store.setOrdersPaused(formData.get("paused") === "true", admin.email);
+  refresh();
+}
+
+export async function setDrinkStockAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const store = loadAdminStore();
+  const itemId = String(formData.get("itemId") ?? "");
+  const remaining = Number(formData.get("remaining"));
+  if (!store || !drinkIds.includes(itemId as DrinkId) || !Number.isInteger(remaining) || remaining < 0) return;
+  await store.setDrinkStock(itemId, Math.min(remaining, 9999), formData.get("available") === "on", admin.email);
   refresh();
 }
 

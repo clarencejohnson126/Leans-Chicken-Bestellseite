@@ -1,4 +1,6 @@
 import { createSign } from "node:crypto";
+import { findItem } from "@/config/menu";
+import { depositOf } from "@/lib/pricing";
 import type { FulfillmentStatus, OrderSummary } from "@/server/ports";
 
 // Google-Sheets-Spiegel der bezahlten Bestellungen. Supabase bleibt die Wahrheit; das Sheet ist
@@ -26,6 +28,9 @@ export const sheetColumns = [
   "Notiz",
   "Quelle",
   "Bestell-ID",
+  // Am Ende angehängt, damit bestehende Zeilen ihre Spalten behalten.
+  "Getränke",
+  "Pfand €",
 ] as const;
 
 export const sheetPaymentLabel: Record<OrderSummary["paymentStatus"], string> = {
@@ -83,6 +88,11 @@ export function orderToRow(order: OrderSummary, receivedAt: Date): (string | num
     order.customerNote,
     order.source,
     order.id,
+    order.items
+      .filter((i) => findItem(i.itemId)?.kind === "drink")
+      .map((i) => `${i.quantity}× ${i.name}`)
+      .join(", "),
+    depositOf(order.items) / 100,
   ];
 }
 

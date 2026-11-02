@@ -1,7 +1,9 @@
 import "server-only";
 import { business, pickupLocation, pilot, taxNote, trackingUrl, whatsappLink } from "@/config/business";
+import { drinkRules } from "@/config/menu";
 import { surveyQuestions } from "@/config/survey";
 import { formatEuro, formatWindow } from "@/lib/format";
+import { depositOf } from "@/lib/pricing";
 import { formatDay } from "@/lib/time";
 import type { SurveyResponse } from "@/lib/survey";
 import type { OrderSummary } from "@/server/ports";
@@ -35,7 +37,11 @@ function itemsTable(order: OrderSummary) {
         `<tr><td style="padding:10px 0;border-bottom:1px solid ${color.line};font-size:15px">${i.quantity}× ${escape(i.name)}</td><td align="right" style="padding:10px 0;border-bottom:1px solid ${color.line};font-size:15px;white-space:nowrap">${formatEuro(i.lineTotalCents)}</td></tr>`,
     )
     .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 0">${lines}
+  const deposit = depositOf(order.items);
+  const depositLine = deposit
+    ? `<tr><td style="padding:10px 0;border-bottom:1px solid ${color.line};font-size:15px">${drinkRules.depositLabel}</td><td align="right" style="padding:10px 0;border-bottom:1px solid ${color.line};font-size:15px;white-space:nowrap">${formatEuro(deposit)}</td></tr>`
+    : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 0">${lines}${depositLine}
 <tr><td style="padding:14px 0 0;font-size:16px;font-weight:bold">Summe</td><td align="right" style="padding:14px 0 0;font-size:20px;font-weight:bold;color:${color.red};white-space:nowrap">${formatEuro(order.totalCents)}</td></tr></table>
 <p style="margin:6px 0 0;font-size:12px;color:${color.muted}">${escape(taxNote)}</p>`;
 }

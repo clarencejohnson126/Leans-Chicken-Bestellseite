@@ -27,8 +27,8 @@ const order: OrderSummary = {
   strips: 10,
   totalCents: 2100,
   items: [
-    { itemId: "crunch-combo", name: "Crunch Combo", quantity: 2, lineTotalCents: 2000 },
-    { itemId: "ketchup", name: "Ketchup", quantity: 1, lineTotalCents: 100 },
+    { itemId: "crunch-combo", name: "Crunch Combo", quantity: 2, lineTotalCents: 2000, depositCents: 0 },
+    { itemId: "ketchup", name: "Ketchup", quantity: 1, lineTotalCents: 100, depositCents: 0 },
   ],
   trackingToken: "0123456789abcdef0123456789abcdef",
 };

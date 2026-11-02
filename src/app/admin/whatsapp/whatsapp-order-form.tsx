@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { createWhatsAppOrderAction } from "@/app/admin/actions";
 import { CopyButton } from "@/components/copy-button";
 import { business, pickupLocation, whatsappTo } from "@/config/business";
-import { catalog, type ItemId } from "@/config/menu";
+import { catalog, drinksEnabled, type ItemId } from "@/config/menu";
 import { schedule, deliveryArea } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
 import { priceCart, type CartInput, type FulfillmentType } from "@/lib/pricing";
@@ -62,10 +62,16 @@ export function WhatsAppOrderForm({ days }: { days: AdminDayOption[] }) {
     <form action={action} className="admin-whatsapp-form">
       <section className="admin-window">
         <h2>Bestellung</h2>
-        {catalog.map((item) => (
+        {catalog
+          .filter((item) => item.kind !== "drink" || drinksEnabled())
+          .map((item) => (
           <label key={item.id} className="admin-qty">
             <span>
-              {item.name} <small>{formatEuro(item.priceCents)}</small>
+              {item.name}{" "}
+              <small>
+                {formatEuro(item.priceCents)}
+                {item.depositCents ? ` + ${formatEuro(item.depositCents)} Pfand` : ""}
+              </small>
             </span>
             <input
               type="number"

@@ -15,6 +15,7 @@ import type {
   FulfillmentStatus,
   TrackingStore,
   SurveyStore,
+  DrinkStock,
 } from "@/server/ports";
 
 const syncColumn: Record<SyncTarget, string> = {
@@ -56,11 +57,17 @@ type OrderRow = {
   strips: number;
   total_cents: number;
   tracking_token: string;
-  order_items?: { item_id: string; item_name_snapshot: string; quantity: number; unit_price_cents_snapshot: number }[];
+  order_items?: {
+    item_id: string;
+    item_name_snapshot: string;
+    quantity: number;
+    unit_price_cents_snapshot: number;
+    deposit_cents_snapshot: number;
+  }[];
 };
 
 const orderColumns =
-  "id, order_number, source, fulfillment_type, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, tracking_token, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot)";
+  "id, order_number, source, fulfillment_type, payment_status, customer_name, customer_phone, customer_email, company, street, postal_code, address_note, customer_note, slot_id, delivery_date, slot_start, slot_end, strips, total_cents, tracking_token, order_items (item_id, item_name_snapshot, quantity, unit_price_cents_snapshot, deposit_cents_snapshot)";
 
 function toSummary(row: OrderRow): OrderSummary {
   return {
@@ -88,6 +95,7 @@ function toSummary(row: OrderRow): OrderSummary {
       name: i.item_name_snapshot,
       quantity: i.quantity,
       lineTotalCents: i.quantity * i.unit_price_cents_snapshot,
+      depositCents: i.quantity * (i.deposit_cents_snapshot ?? 0),
     })),
     trackingToken: row.tracking_token,
   };
@@ -95,6 +103,21 @@ function toSummary(row: OrderRow): OrderSummary {
 
 function fail(action: string, error: { message: string } | null): never {
   throw new Error(`supabase ${action}: ${error?.message ?? "unbekannter Fehler"}`);
+}
+
+async function readDrinkStock(db: ReturnType<typeof createSupabaseClient>): Promise<DrinkStock[]> {
+  const { data, error } = await db.rpc("drink_stock_status");
+  if (error) fail("drink_stock_status", error);
+  return (data as { item_id: string; stock: number; available: boolean; committed: number }[]).map((r) => {
+    const committed = Number(r.committed);
+    return {
+      itemId: r.item_id,
+      stock: r.stock,
+      available: r.available,
+      committed,
+      remaining: r.available ? Math.max(0, r.stock - committed) : 0,
+    };
+  });
 }
 
 export function createSupabaseClient(url: string, secretKey: string, schema: string) {
@@ -147,9 +170,12 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
           quantity: l.quantity,
           strips: l.strips,
           fries: l.fries,
+          deposit_cents: l.unitDepositCents,
         })),
         p_max_strips: input.maxStripsPerSlot,
       });
+      const soldOut = error?.message.match(/drink_sold_out:([\w-]+)/);
+      if (soldOut) return { ok: false, reason: "sold_out", itemId: soldOut[1] };
       if (error) fail("create_pending_order", error);
       const row = (data as { id: string; order_number: string }[])[0];
       if (!row) return { ok: false, reason: "capacity" };
@@ -198,6 +224,10 @@ export function createSupabaseStore(db: ReturnType<typeof createSupabaseClient>)
         .eq("payment_status", "pending");
       if (error) fail("orders.expire", error);
       await addEvent(orderId, "order_expired", { reason });
+    },
+
+    drinkStock() {
+      return readDrinkStock(db);
     },
 
     async isEventProcessed(eventId) {
@@ -387,6 +417,18 @@ export function createAdminStore(db: ReturnType<typeof createSupabaseClient>): A
         .upsert({ key: "orders_paused", value: paused, updated_at: new Date().toISOString() });
       if (error) fail("admin.setOrdersPaused", error);
       console.log(JSON.stringify({ event: "orders_paused_changed", paused, actor, ts: new Date().toISOString() }));
+    },
+
+    async setDrinkStock(itemId, remaining, available, actor) {
+      const committed = (await readDrinkStock(db)).find((d) => d.itemId === itemId)?.committed ?? 0;
+      const { error } = await db.from("drink_stock").upsert({
+        item_id: itemId,
+        stock: remaining + committed,
+        available,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) fail("admin.setDrinkStock", error);
+      console.log(JSON.stringify({ event: "drink_stock_changed", itemId, remaining, available, actor, ts: new Date().toISOString() }));
     },
   };
 }
