@@ -155,11 +155,6 @@ describe("createOrder", () => {
     const himbeere = "brambacher-himbeere-zitrone";
     const grapefruit = "brambacher-pink-grapefruit";
 
-    it("sind vor der Freigabe von Preis und Pfand nicht bestellbar", () => {
-      vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "");
-      expect(() => request({ "crunch-combo": 1, [himbeere]: 1 })).toThrow(/noch nicht bestellbar/);
-    });
-
     it("werden mit Pfand berechnet, beide Sorten in einer Bestellung", async () => {
       vi.stubEnv("NEXT_PUBLIC_DRINKS_PREVIEW", "1");
       const d = deps(memoryStore({ [himbeere]: 20, [grapefruit]: 20 }));

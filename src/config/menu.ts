@@ -114,10 +114,10 @@ export const drinks = [
 
 export const drinkRules = {
   brand: "Bad Brambacher",
-  // 0,5-l-Glas-Mehrwegflasche (Brunnen-Mehrweg, 0,15 €). Vor Freigabe mit dem Lieferschein abgleichen.
+  // 0,5-l-Glas-Mehrwegflasche (Brunnen-Mehrweg, 0,15 €). Kunde zahlt 3,50 € inkl. Pfand (Betreiber, 02.11.2026).
   depositLabel: "Mehrwegpfand",
   pricesConfirmed: true,
-  depositConfirmed: false,
+  depositConfirmed: true,
 } as const;
 
 // Getränke sind erst bestellbar, wenn Preis und Pfand bestätigt sind. Zum Testen lokal oder in einer
