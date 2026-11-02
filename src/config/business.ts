@@ -17,6 +17,8 @@ export const business = {
     // Kundenkontakt (Mails, Stripe, Website)
     email: "hallo@leanchicken.de",
     phone: "+49 179 1778957",
+    // Anzeige auf der Website (dieselbe Nummer, für Anrufe und WhatsApp)
+    phoneDisplay: "0179 1778957",
     // Rechtliche Angaben (Impressum, Datenschutz)
     legalEmail: "info@johnson-services.de",
     legalPhone: "+49 162 1811123",
@@ -38,6 +40,9 @@ export const business = {
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000"),
 } as const;
+
+// tel:-Link zur Bestellnummer, z. B. "tel:+491791778957"
+export const phoneHref = `tel:${business.operator.phone.replace(/\s/g, "")}`;
 
 // Abholung: gleiche Zeitfenster und Fritteusen-Kapazität wie die Lieferung.
 export const pickupLocation = {

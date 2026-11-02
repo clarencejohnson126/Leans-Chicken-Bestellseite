@@ -1829,3 +1829,17 @@ h3 {
   line-height: 1;
   cursor: pointer;
 }
+
+/* Telefonnummer zum Bestellen */
+.header-phone {
+  color: var(--yellow);
+  white-space: nowrap;
+}
+.footer-contact {
+  color: var(--cream);
+}
+.footer-contact a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

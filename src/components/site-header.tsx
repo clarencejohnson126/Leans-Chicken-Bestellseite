@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Logo, LogoLink } from "@/components/brand-logo";
-import { pilot } from "@/config/business";
+import { business, phoneHref, pilot } from "@/config/business";
 
 export function SiteHeader() {
   return (
@@ -23,6 +23,9 @@ export function SiteHeader() {
           <Link href="/#menue">Menü</Link>
           <Link href="/#so-gehts">So geht&apos;s</Link>
           <Link href="/#fragen">Fragen</Link>
+          <a href={phoneHref} className="header-phone">
+            {business.operator.phoneDisplay}
+          </a>
         </nav>
         <Link href="/bestellen" className="btn btn-red">
           Bestellen

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { business, taxNote } from "@/config/business";
+import { business, phoneHref, taxNote } from "@/config/business";
 
 export function SiteFooter() {
   return (
@@ -10,6 +10,10 @@ export function SiteFooter() {
           <Link href="/datenschutz">Datenschutz</Link>
           <Link href="/agb">AGB</Link>
         </nav>
+        <p className="footer-contact">
+          Bestellen und Fragen: <a href={phoneHref}>{business.operator.phoneDisplay}</a> (Anruf oder WhatsApp) ·{" "}
+          <a href={`mailto:${business.operator.email}`}>{business.operator.email}</a>
+        </p>
         <p>
           {business.name} · {business.area} · {taxNote}
         </p>

@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CallButton } from "@/components/call-button";
 import { MenuImage } from "@/components/menu-image";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { business, pickupLocation, pilot, taxNote } from "@/config/business";
+import { business, phoneHref, pickupLocation, pilot, taxNote } from "@/config/business";
 import { allergens, menus, orderRules, sides } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
@@ -127,6 +128,7 @@ export default function Home() {
               Jetzt vorbestellen →
             </Link>
             <WhatsAppButton />
+            <CallButton />
           </div>
           <p className="trust-line">
             <span>★</span> Auf dem LOOPFEST ausverkauft · Familienprojekt aus FRANKLIN
@@ -428,6 +430,7 @@ export default function Home() {
               Jetzt Zeitfenster sichern →
             </Link>
             <WhatsAppButton />
+            <CallButton />
           </div>
         </div>
       </section>
@@ -469,6 +472,13 @@ export default function Home() {
             </p>
           </details>
           <details>
+            <summary>Kann ich auch telefonisch bestellen?</summary>
+            <p>
+              Ja. Ruf uns an unter <a href={phoneHref}>{business.operator.phoneDisplay}</a> oder schreib auf
+              WhatsApp. Wir nehmen deine Bestellung auf und schicken dir einen persönlichen Bezahllink aufs Handy.
+            </p>
+          </details>
+          <details>
             <summary>Wie kann ich bezahlen?</summary>
             <p>
               Online über Stripe mit {paymentMethodsText}. Deine Sparkassen- oder Bankkarte
@@ -491,7 +501,10 @@ export default function Home() {
           </details>
           <details>
             <summary>Ich muss meine Bestellung ändern.</summary>
-            <p>Schreib uns kurz auf WhatsApp mit deiner Bestellnummer – wir kümmern uns.</p>
+            <p>
+              Schreib uns kurz auf WhatsApp oder ruf an unter <a href={phoneHref}>{business.operator.phoneDisplay}</a>{" "}
+              und nenn deine Bestellnummer – wir kümmern uns.
+            </p>
           </details>
           <details>
             <summary>Allergene</summary>
@@ -510,6 +523,7 @@ export default function Home() {
             Jetzt vorbestellen →
           </Link>
           <WhatsAppButton />
+          <CallButton />
         </div>
       </section>
 

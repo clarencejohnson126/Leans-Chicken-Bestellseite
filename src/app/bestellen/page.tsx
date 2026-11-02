@@ -5,6 +5,7 @@ import { OrderForm, type DayOption } from "@/components/order-form";
 import { taxNote } from "@/config/business";
 import { listDeliveryDays } from "@/lib/slots";
 import { formatDay } from "@/lib/time";
+import { CallButton } from "@/components/call-button";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { loadAdminStore, loadOrderDeps } from "@/server/integrations";
 
@@ -40,7 +41,10 @@ async function LiveOrderForm() {
           <strong>Online-Bestellungen sind gerade pausiert.</strong> Schreib uns auf WhatsApp, dann schauen wir, was
           geht.
         </p>
-        <WhatsAppButton label="Per WhatsApp bestellen" />
+        <div className="hero-actions">
+          <WhatsAppButton label="Per WhatsApp bestellen" />
+          <CallButton />
+        </div>
       </div>
     );
   }
