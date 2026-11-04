@@ -95,7 +95,7 @@ export const drinks = [
     size: "0,5 l",
     strips: 0,
     fries: 0,
-    image: "/assets/drinks/brambacher-himbeere-zitrone-0-5l.webp",
+    image: "/assets/drinks/brambacher-himbeere-zitrone-0-5l-v2.webp",
   },
   {
     id: "brambacher-pink-grapefruit",
@@ -108,7 +108,7 @@ export const drinks = [
     size: "0,5 l",
     strips: 0,
     fries: 0,
-    // Noch kein freigegebenes Produktbild, die Karte zeigt einen Platzhalter.
+    image: "/assets/drinks/brambacher-pink-grapefruit-0-5l.webp",
   },
 ] as const satisfies readonly CatalogItem[];
 
