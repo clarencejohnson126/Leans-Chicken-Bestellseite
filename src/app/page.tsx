@@ -48,8 +48,8 @@ const reasons = [
     text: "Kein billiges Industriesalz. Wir würzen mit echtem Himalaya-Salz.",
   },
   {
-    title: "Bio-Sonnenblumenöl",
-    text: "Kein Rapsöl. Wir frittieren ausschließlich in Bio-Sonnenblumenöl.",
+    title: "Sonnenblumenöl",
+    text: "Kein Rapsöl. Wir frittieren ausschließlich in Sonnenblumenöl.",
   },
   {
     title: "Signature Sauce",
@@ -236,7 +236,7 @@ export default function Home() {
           Frisch. Heiß. <span className="brush">Unschlagbar.</span>
         </h2>
         <p className="lead section-lead">
-          Vier Menüs, alle mit Signature Sauce. Gewürzt mit Himalaya-Salz, frittiert in Bio-Sonnenblumenöl. Kein
+          Vier Menüs, alle mit Signature Sauce. Gewürzt mit Himalaya-Salz, frittiert in Sonnenblumenöl. Kein
           Schnickschnack – nur Chicken, das knackt.
         </p>
         <div className="menu-list">

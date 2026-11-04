@@ -155,7 +155,7 @@ export const allergens = {
   confirmed: false,
   entries: [
     { name: "Chicken Strips (Cornflakes-Panade)", list: ["Gluten (Weizen, Gerste)", "Ei", "Milch"] },
-    { name: "Pommes", list: ["keine deklarationspflichtigen Allergene (frittiert in Bio-Sonnenblumenöl)"] },
+    { name: "Pommes", list: ["keine deklarationspflichtigen Allergene (frittiert in Sonnenblumenöl)"] },
     { name: "Worcestershire Sauce", list: ["Fisch", "Gluten (Gerste)", "Sellerie"] },
     { name: "Ketchup", list: ["Sellerie (je nach Hersteller)"] },
     { name: "Mayo", list: ["Ei", "Senf"] },
