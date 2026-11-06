@@ -38,6 +38,11 @@ export default function PrivacyPage() {
       <h2>Eingesetzte Dienstleister</h2>
       <ul>
         <li>Vercel Inc. – Hosting der Website (Server-Logs mit IP-Adresse).</li>
+        <li>
+          Vercel Web Analytics – anonyme Reichweitenmessung (aufgerufene Seiten, Herkunftsseite, Land,
+          Gerätetyp). Ohne Cookies; die IP-Adresse wird nicht gespeichert, Besucher werden nur über einen
+          täglich wechselnden Hash gezählt und nicht über mehrere Tage oder Websites wiedererkannt.
+        </li>
         <li>Supabase Inc. – Speicherung der Bestelldaten in einer Datenbank in der EU.</li>
         <li>Stripe Payments Europe Ltd. – Zahlungsabwicklung; Stripe verarbeitet deine Zahlungsdaten in eigener Verantwortung.</li>
         <li>Google Ireland Ltd. – interne Bestellübersicht in Google Sheets.</li>

@@ -1,4 +1,4 @@
-import { menus, sides } from "@/config/menu";
+import { drinkRules, drinks, drinksEnabled, menus, sides } from "@/config/menu";
 import { deliveryArea, schedule } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
 
@@ -77,10 +77,16 @@ export function whatsappOrderTemplate() {
     "",
     ...menus.map((m) => `${m.name} (${formatEuro(m.priceCents)}): `),
     `Extras – ${sides.map((s) => `${s.name} ${formatEuro(s.priceCents)}`).join(", ")}: `,
+    ...(drinksEnabled()
+      ? [
+          `Getränke – ${drinkRules.brand} ${drinks.map((d) => d.name).join(" / ")}, je ${formatEuro(drinks[0].priceCents + drinks[0].depositCents)} inkl. Pfand: `,
+        ]
+      : []),
     "",
+    `Lieferung oder Abholung (${pickupLocation.street}): `,
     `Liefertag + Uhrzeit (${days}, ${hours} Uhr): `,
     "Name: ",
-    `Adresse (${deliveryArea.postalCodes.join("/")} ${deliveryArea.label.split(",")[0]}): `,
+    `Adresse, nur bei Lieferung (${deliveryArea.postalCodes.join("/")} ${deliveryArea.label.split(",")[0]}): `,
   ].join("\n");
 }
 
