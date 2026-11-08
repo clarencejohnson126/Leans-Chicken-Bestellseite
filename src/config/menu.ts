@@ -17,7 +17,20 @@ export type CatalogItem = {
   // Nur Getränke: Flaschengröße und Pfand je Flasche. Pfand ist kein Umsatz und wird separat ausgewiesen.
   size?: string;
   depositCents?: number;
+  // Englische Anzeigetexte für /en. Fehlt ein Feld, gilt der deutsche Text (z. B. Markennamen).
+  en?: { name?: string; description?: string; includes?: string; size?: string };
 };
+
+/** Anzeigetexte eines Produkts in der gewünschten Sprache. Bestellungen speichern weiter `name` (deutsch). */
+export function itemText(item: CatalogItem, lang: "de" | "en") {
+  const en = lang === "en" ? item.en : undefined;
+  return {
+    name: en?.name ?? item.name,
+    description: en?.description ?? item.description,
+    includes: en?.includes ?? item.includes,
+    size: en?.size ?? item.size,
+  };
+}
 
 export const menus = [
   {
@@ -27,6 +40,7 @@ export const menus = [
     name: "Basic",
     description: "5 Chicken Strips",
     includes: "inkl. Worcestershire Sauce",
+    en: { includes: "incl. Worcestershire Sauce" },
     priceCents: 800,
     strips: 5,
     fries: 0,
@@ -40,6 +54,7 @@ export const menus = [
     name: "Crunch Combo",
     description: "5 Chicken Strips + Pommes",
     includes: "inkl. Worcestershire Sauce & Ketchup",
+    en: { description: "5 Chicken Strips + Fries", includes: "incl. Worcestershire Sauce & Ketchup" },
     priceCents: 1000,
     strips: 5,
     fries: 1,
@@ -53,6 +68,7 @@ export const menus = [
     name: "Big Boy Box",
     description: "10 Chicken Strips",
     includes: "inkl. 2× Worcestershire Sauce",
+    en: { includes: "incl. 2× Worcestershire Sauce" },
     priceCents: 1400,
     strips: 10,
     fries: 0,
@@ -66,6 +82,7 @@ export const menus = [
     name: "Family Pack",
     description: "10 Chicken Strips + 2× Pommes",
     includes: "inkl. 2× Worcestershire Sauce & 2× Ketchup",
+    en: { description: "10 Chicken Strips + 2× Fries", includes: "incl. 2× Worcestershire Sauce & 2× Ketchup" },
     priceCents: 1800,
     strips: 10,
     fries: 2,
@@ -75,10 +92,10 @@ export const menus = [
 ] as const satisfies readonly CatalogItem[];
 
 export const sides = [
-  { id: "pommes", kind: "side", name: "Pommes", description: "Extra Portion", priceCents: 300, strips: 0, fries: 1 },
+  { id: "pommes", kind: "side", name: "Pommes", description: "Extra Portion", priceCents: 300, strips: 0, fries: 1, en: { name: "Fries", description: "Extra portion" } },
   { id: "worcester", kind: "side", name: "Worcestershire Sauce", description: "Lean's Signature Sauce", priceCents: 150, strips: 0, fries: 0 },
-  { id: "ketchup", kind: "side", name: "Ketchup", description: "Extra Dip", priceCents: 100, strips: 0, fries: 0 },
-  { id: "mayo", kind: "side", name: "Mayo", description: "Extra Dip", priceCents: 100, strips: 0, fries: 0 },
+  { id: "ketchup", kind: "side", name: "Ketchup", description: "Extra Dip", priceCents: 100, strips: 0, fries: 0, en: { description: "Extra dip" } },
+  { id: "mayo", kind: "side", name: "Mayo", description: "Extra Dip", priceCents: 100, strips: 0, fries: 0, en: { description: "Extra dip" } },
 ] as const satisfies readonly CatalogItem[];
 
 // Getränke: zusätzliche Produkte, kein Bestandteil der Menüs. Preise und Pfand sind vorläufig
@@ -96,6 +113,11 @@ export const drinks = [
     strips: 0,
     fries: 0,
     image: "/assets/drinks/brambacher-himbeere-zitrone-0-5l-v2.webp",
+    en: {
+      name: "Raspberry-Lemon",
+      description: "Bad Brambacher Garden Lemonade Raspberry-Lemon",
+      size: "0.5 l",
+    },
   },
   {
     id: "brambacher-pink-grapefruit",
@@ -109,6 +131,7 @@ export const drinks = [
     strips: 0,
     fries: 0,
     image: "/assets/drinks/brambacher-pink-grapefruit-0-5l.webp",
+    en: { description: "Bad Brambacher Garden Lemonade Pink Grapefruit", size: "0.5 l" },
   },
 ] as const satisfies readonly CatalogItem[];
 
@@ -116,9 +139,15 @@ export const drinkRules = {
   brand: "Bad Brambacher",
   // 0,5-l-Glas-Mehrwegflasche (Brunnen-Mehrweg, 0,15 €). Kunde zahlt 3,50 € inkl. Pfand (Betreiber, 02.11.2026).
   depositLabel: "Mehrwegpfand",
+  depositLabelEn: "deposit",
   pricesConfirmed: true,
   depositConfirmed: true,
 } as const;
+
+/** Bezeichnung des Pfands in der gewünschten Sprache. */
+export function depositLabel(lang: "de" | "en") {
+  return lang === "en" ? drinkRules.depositLabelEn : drinkRules.depositLabel;
+}
 
 // Getränke sind erst bestellbar, wenn Preis und Pfand bestätigt sind. Zum Testen lokal oder in einer
 // Vercel-Preview NEXT_PUBLIC_DRINKS_PREVIEW=1 setzen.
@@ -154,11 +183,34 @@ export const orderRules = {
 export const allergens = {
   confirmed: false,
   entries: [
-    { name: "Chicken Strips (Cornflakes-Panade)", list: ["Gluten (Weizen, Gerste)", "Ei", "Milch"] },
-    { name: "Pommes", list: ["keine deklarationspflichtigen Allergene (frittiert in Sonnenblumenöl)"] },
-    { name: "Worcestershire Sauce", list: ["Fisch", "Gluten (Gerste)", "Sellerie"] },
-    { name: "Ketchup", list: ["Sellerie (je nach Hersteller)"] },
-    { name: "Mayo", list: ["Ei", "Senf"] },
-    { name: "Garten-Limonaden (Bad Brambacher)", list: ["keine deklarationspflichtigen Allergene laut Hersteller (prüfen)"] },
+    {
+      name: "Chicken Strips (Cornflakes-Panade)",
+      list: ["Gluten (Weizen, Gerste)", "Ei", "Milch"],
+      en: { name: "Chicken Strips (cornflake coating)", list: ["Gluten (wheat, barley)", "Egg", "Milk"] },
+    },
+    {
+      name: "Pommes",
+      list: ["keine deklarationspflichtigen Allergene (frittiert in Sonnenblumenöl)"],
+      en: { name: "Fries", list: ["no allergens requiring declaration (fried in sunflower oil)"] },
+    },
+    {
+      name: "Worcestershire Sauce",
+      list: ["Fisch", "Gluten (Gerste)", "Sellerie"],
+      en: { name: "Worcestershire Sauce", list: ["Fish", "Gluten (barley)", "Celery"] },
+    },
+    {
+      name: "Ketchup",
+      list: ["Sellerie (je nach Hersteller)"],
+      en: { name: "Ketchup", list: ["Celery (depending on manufacturer)"] },
+    },
+    { name: "Mayo", list: ["Ei", "Senf"], en: { name: "Mayo", list: ["Egg", "Mustard"] } },
+    {
+      name: "Garten-Limonaden (Bad Brambacher)",
+      list: ["keine deklarationspflichtigen Allergene laut Hersteller (prüfen)"],
+      en: {
+        name: "Garden lemonades (Bad Brambacher)",
+        list: ["no allergens requiring declaration according to the manufacturer (to be checked)"],
+      },
+    },
   ],
 } as const;

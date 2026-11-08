@@ -1,4 +1,5 @@
-import { orderRequestSchema } from "@/lib/validation";
+import { orderMessages } from "@/i18n/order-messages";
+import { orderRequestSchemaFor, requestLocale } from "@/lib/validation";
 import { loadAdminStore, loadOrderDeps } from "@/server/integrations";
 import { log } from "@/server/log";
 import { createOrder } from "@/server/orders";
@@ -8,16 +9,19 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ code: "invalid_json", message: "Ungültige Anfrage." }, { status: 400 });
+    return Response.json({ code: "invalid_json", message: orderMessages.de.invalidJson }, { status: 400 });
   }
 
-  const parsed = orderRequestSchema.safeParse(body);
+  // Sprache zuerst lesen, damit auch Validierungsfehler in der Sprache des Formulars zurückkommen.
+  const lang = requestLocale(body);
+  const messages = orderMessages[lang];
+  const parsed = orderRequestSchemaFor(lang).safeParse(body);
   if (!parsed.success) {
     const fields = Object.fromEntries(
       parsed.error.issues.map((i) => [i.path.join("."), i.message]),
     );
     return Response.json(
-      { code: "validation", message: "Bitte prüfe deine Angaben.", fields },
+      { code: "validation", message: messages.validation, fields },
       { status: 422 },
     );
   }
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         code: "not_configured",
-        message: "Die Online-Bezahlung wird gerade eingerichtet. Bestell gern solange per WhatsApp.",
+        message: messages.notConfigured,
       },
       { status: 503 },
     );
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
 
   if (await loadAdminStore()?.ordersPaused()) {
     return Response.json(
-      { code: "paused", message: "Online-Bestellungen sind gerade pausiert. Schreib uns gern auf WhatsApp." },
+      { code: "paused", message: messages.paused },
       { status: 409 },
     );
   }

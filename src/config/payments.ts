@@ -5,6 +5,7 @@
 export const payments = {
   stripeMethods: ["card", "sepa_debit"] as const,
   labels: ["Kredit- oder Debitkarte", "Apple Pay", "Google Pay", "SEPA-Lastschrift"],
+  labelsEn: ["credit or debit card", "Apple Pay", "Google Pay", "SEPA Direct Debit"],
   // SEPA bestätigt erst nach einigen Tagen. Für den Pilot werden SEPA-Bestellungen im Status
   // "processing" trotzdem zubereitet und geliefert; geplatzte Lastschriften lösen eine Meldung aus.
   sepa: {
@@ -13,3 +14,8 @@ export const payments = {
 } as const;
 
 export const paymentMethodsText = payments.labels.join(", ").replace(/, ([^,]*)$/, " oder $1");
+
+/** Zahlungsarten als Fließtext in der gewünschten Sprache. */
+export function paymentMethodsTextFor(lang: "de" | "en") {
+  return lang === "de" ? paymentMethodsText : payments.labelsEn.join(", ").replace(/, ([^,]*)$/, " or $1");
+}

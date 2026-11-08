@@ -2,27 +2,46 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { submitSurveyAction } from "@/app/umfrage/actions";
-import { pilot } from "@/config/business";
-import { surveyQuestions, surveyTipMaxLength } from "@/config/survey";
+import { submitSurveyAction } from "@/app/[lang]/umfrage/actions";
+import { surveyTipMaxLength } from "@/config/survey";
+import type { Dictionary } from "@/i18n/de";
+import { fill, type Locale } from "@/i18n/config";
 
-export function SurveyForm() {
+type Question = {
+  id: string;
+  label: string;
+  multiple: boolean;
+  options: { id: string; label: string }[];
+};
+
+export function SurveyForm({
+  lang,
+  questions,
+  labels: t,
+  endLabel,
+  orderHref,
+  homeHref,
+}: {
+  lang: Locale;
+  questions: Question[];
+  labels: Dictionary["surveyForm"];
+  endLabel: string;
+  orderHref: string;
+  homeHref: string;
+}) {
   const [state, action, pending] = useActionState(submitSurveyAction, null);
 
   if (state?.ok) {
     return (
       <div className="survey-done" role="status">
-        <h2>Danke, deine Stimme zählt!</h2>
-        <p className="lead">
-          Wir werten alles nach dem Testlauf am {pilot.endLabel} aus und entscheiden dann, an welchen Tagen es
-          weitergeht.
-        </p>
+        <h2>{t.doneTitle}</h2>
+        <p className="lead">{fill(t.doneText, { end: endLabel })}</p>
         <div className="hero-actions">
-          <Link href="/bestellen" className="btn btn-red">
-            Jetzt vorbestellen →
+          <Link href={orderHref} className="btn btn-red">
+            {t.orderNow}
           </Link>
-          <Link href="/" className="btn btn-ghost">
-            Zur Startseite
+          <Link href={homeHref} className="btn btn-ghost">
+            {t.backHome}
           </Link>
         </div>
       </div>
@@ -31,12 +50,14 @@ export function SurveyForm() {
 
   return (
     <form action={action} className="survey">
-      {surveyQuestions.map((question, i) => (
+      {/* Sprache für die Fehlermeldungen der Server Action */}
+      <input type="hidden" name="lang" value={lang} />
+      {questions.map((question, i) => (
         <fieldset key={question.id} className="survey-question">
           <legend>
             <span className="survey-step">{i + 1}</span>
             {question.label}
-            {question.multiple && <small> Mehrfachauswahl</small>}
+            {question.multiple && <small> {t.multiple}</small>}
           </legend>
           <div className="survey-options">
             {question.options.map((option) => (
@@ -50,16 +71,11 @@ export function SurveyForm() {
       ))}
       <fieldset className="survey-question">
         <legend>
-          <span className="survey-step">{surveyQuestions.length + 1}</span>
-          Noch ein Tipp für uns? <small>optional</small>
+          <span className="survey-step">{questions.length + 1}</span>
+          {t.tipLegend} <small>{t.optional}</small>
         </legend>
         <div className="field">
-          <textarea
-            name="tip"
-            maxLength={surveyTipMaxLength}
-            aria-label="Dein Tipp"
-            placeholder="Neue Sauce, anderes Menü, Lieferung ins Büro … alles hilft."
-          />
+          <textarea name="tip" maxLength={surveyTipMaxLength} aria-label={t.tipLabel} placeholder={t.tipPlaceholder} />
         </div>
       </fieldset>
       {/* Honeypot gegen Bots, für Menschen unsichtbar */}
@@ -70,9 +86,9 @@ export function SurveyForm() {
         </p>
       )}
       <button type="submit" className="btn btn-red" disabled={pending}>
-        {pending ? "Wird gesendet …" : "Abschicken"}
+        {pending ? t.sending : t.submit}
       </button>
-      <p className="hint">Anonym, ohne Name oder E-Mail.</p>
+      <p className="hint">{t.anonymous}</p>
     </form>
   );
 }

@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/config";
 import type { FulfillmentType, PricedLine } from "@/lib/pricing";
 import type { SurveyResponse } from "@/lib/survey";
 import type { Slot } from "@/lib/slots";
@@ -64,7 +65,8 @@ export interface OrderStore {
 }
 
 export interface PaymentProvider {
-  createCheckout(order: StoredOrder): Promise<CheckoutSession>;
+  /** `lang` steuert Sprache und Rückleitungs-URLs des Checkouts (Standard: Deutsch). */
+  createCheckout(order: StoredOrder, options?: { lang?: Locale }): Promise<CheckoutSession>;
   /** Beendet einen offenen Checkout, damit er nicht mehr bezahlt werden kann. */
   expireCheckout(sessionId: string): Promise<"expired" | "already_closed">;
   /** Erstattet den vollen Betrag. Idempotent je Bestellung: ein zweiter Aufruf erstattet nicht doppelt. */

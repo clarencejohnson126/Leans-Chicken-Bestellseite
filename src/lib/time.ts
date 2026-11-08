@@ -1,4 +1,5 @@
 import { schedule } from "@/config/schedule";
+import type { Locale } from "@/i18n/config";
 
 // Vercel läuft in UTC. Alle Geschäftslogik rechnet deshalb explizit in Europe/Berlin.
 
@@ -69,21 +70,20 @@ export function isoWeekday(date: string): number {
   return day === 0 ? 7 : day;
 }
 
-const dayLong = new Intl.DateTimeFormat("de-DE", {
-  timeZone: "UTC",
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-});
-const dayShort = new Intl.DateTimeFormat("de-DE", {
-  timeZone: "UTC",
-  weekday: "short",
-  day: "2-digit",
-  month: "2-digit",
-});
+const dayFormats: Record<Locale, Record<"long" | "short", Intl.DateTimeFormat>> = {
+  de: {
+    long: new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }),
+    short: new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "2-digit" }),
+  },
+  // en-GB: "Monday 16 November" bzw. "Mon 16 Nov"
+  en: {
+    long: new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }),
+    short: new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }),
+  },
+};
 
-export function formatDay(date: string, style: "long" | "short" = "long") {
+export function formatDay(date: string, style: "long" | "short" = "long", lang: Locale = "de") {
   const [y, m, d] = date.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d));
-  return (style === "long" ? dayLong : dayShort).format(t);
+  return dayFormats[lang][style].format(t);
 }

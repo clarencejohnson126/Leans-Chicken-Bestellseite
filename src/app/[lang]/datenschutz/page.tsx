@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { LegalLanguageNotice } from "@/components/legal-language-notice";
+import { getDictionary, resolveLocale } from "@/i18n";
 import { business } from "@/config/business";
 
-export const metadata: Metadata = { title: "Datenschutz | Lean's Crispy Chicken" };
+export async function generateMetadata({ params }: PageProps<"/[lang]/datenschutz">): Promise<Metadata> {
+  const lang = await resolveLocale(params);
+  return { title: getDictionary(lang).meta.privacyTitle };
+}
 
-export default function PrivacyPage() {
+// Rechtstext bleibt auf Deutsch (verbindlich); /en zeigt nur einen englischen Hinweis darüber.
+export default async function PrivacyPage({ params }: PageProps<"/[lang]/datenschutz">) {
+  const lang = await resolveLocale(params);
   const { operator } = business;
   return (
-    <main className="wrap legal">
+    <main className="wrap legal" lang="de">
+      <LegalLanguageNotice lang={lang} title="privacyTitle" />
       <div className="draft-banner">
         Entwurf – an die tatsächlich eingesetzten Dienste anpassen und rechtlich prüfen lassen.
       </div>

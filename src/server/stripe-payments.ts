@@ -1,7 +1,8 @@
 import "server-only";
 import type Stripe from "stripe";
 import { business, pickupLocation } from "@/config/business";
-import { drinkRules } from "@/config/menu";
+import { drinkRules, findItem, itemText } from "@/config/menu";
+import { localePath, type Locale } from "@/i18n/config";
 import { formatWindow } from "@/lib/format";
 import { stripeProductId } from "@/lib/stripe-ids";
 import { formatDay } from "@/lib/time";
@@ -16,6 +17,12 @@ import type { PaymentProvider, StoredOrder } from "@/server/ports";
 // Reservierungen (WhatsApp-Zahlungslinks) bekommen eine Minute Puffer über das Reservierungsende.
 const MIN_SESSION_LIFETIME_MS = 30 * 60_000 + 60_000;
 
+/** Englischer Anzeigename eines Produkts; gespeichert ist der deutsche. */
+function englishName(itemId: string, fallback: string) {
+  const item = findItem(itemId);
+  return item ? itemText(item, "en").name : fallback;
+}
+
 export function createStripePayments(
   stripe: Stripe,
   options: { paymentMethodConfiguration: string; siteUrl?: string },
@@ -23,15 +30,17 @@ export function createStripePayments(
   const siteUrl = options.siteUrl ?? business.siteUrl;
 
   return {
-    async createCheckout(order: StoredOrder) {
+    async createCheckout(order: StoredOrder, checkoutOptions?: { lang?: Locale }) {
+      const lang = checkoutOptions?.lang ?? "de";
+      const en = lang === "en";
       const expiresMs = Math.max(Date.now() + MIN_SESSION_LIFETIME_MS, order.expiresAt.getTime() + 60_000);
       const metadata = { order_id: order.id, order_number: order.orderNumber, source: order.source };
-      const delivery = `${formatDay(order.slot.date)}, ${formatWindow(order.slot.start, order.slot.end)}`;
+      const delivery = `${formatDay(order.slot.date, "long", lang)}, ${formatWindow(order.slot.start, order.slot.end, lang)}`;
 
       const session = await stripe.checkout.sessions.create(
         {
           mode: "payment",
-          locale: "de",
+          locale: lang,
           submit_type: "pay",
           payment_method_configuration: options.paymentMethodConfiguration,
           client_reference_id: order.id,
@@ -53,7 +62,11 @@ export function createStripePayments(
                     quantity: line.quantity,
                     price_data: {
                       currency: "eur",
-                      product_data: { name: `${drinkRules.depositLabel} ${line.name}` },
+                      product_data: {
+                        name: en
+                          ? `Deposit ${englishName(line.itemId, line.name)}`
+                          : `${drinkRules.depositLabel} ${line.name}`,
+                      },
                       unit_amount: line.unitDepositCents,
                     },
                   },
@@ -63,16 +76,20 @@ export function createStripePayments(
           custom_text: {
             submit: {
               message:
-                (order.fulfillment === "pickup"
-                  ? `Bestellung ${order.orderNumber} · Abholung ${delivery} in der ${pickupLocation.street}`
-                  : `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}`) +
+                (en
+                  ? order.fulfillment === "pickup"
+                    ? `Order ${order.orderNumber} · Pickup ${delivery} at ${pickupLocation.street}`
+                    : `Order ${order.orderNumber} · Delivery ${delivery} to ${order.customer.street}`
+                  : order.fulfillment === "pickup"
+                    ? `Bestellung ${order.orderNumber} · Abholung ${delivery} in der ${pickupLocation.street}`
+                    : `Bestellung ${order.orderNumber} · Lieferung ${delivery} nach ${order.customer.street}`) +
                 // Website-Kunden bestätigen die AGB im Formular, WhatsApp-Kunden mit der Zahlung.
                 (order.source === "whatsapp" ? ` · Es gelten unsere AGB: ${siteUrl}/agb` : ""),
             },
           },
           expires_at: Math.floor(expiresMs / 1000),
-          success_url: `${siteUrl}/bestellung/danke?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${siteUrl}/bestellung/abgebrochen?order=${encodeURIComponent(order.orderNumber)}`,
+          success_url: `${siteUrl}${localePath(lang, "/bestellung/danke")}?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${siteUrl}${localePath(lang, "/bestellung/abgebrochen")}?order=${encodeURIComponent(order.orderNumber)}`,
         },
         { idempotencyKey: `checkout_${order.id}` },
       );

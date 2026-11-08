@@ -52,6 +52,8 @@ export function WhatsAppOrderForm({ days }: { days: AdminDayOption[] }) {
         </div>
         <p className="hint" style={{ marginTop: 16 }}>
           Sobald bezahlt ist, steht die Bestellung automatisch im Dashboard und im Sheet.{" "}
+          {/* Bewusst voller Seitenaufruf, damit das Formular komplett zurückgesetzt wird. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/admin/whatsapp">Nächste WhatsApp-Bestellung</a>
         </p>
       </div>

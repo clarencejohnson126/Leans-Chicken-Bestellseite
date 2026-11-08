@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { LegalLanguageNotice } from "@/components/legal-language-notice";
+import { getDictionary, resolveLocale } from "@/i18n";
 import { business } from "@/config/business";
 
-export const metadata: Metadata = { title: "Impressum | Lean's Crispy Chicken" };
+export async function generateMetadata({ params }: PageProps<"/[lang]/impressum">): Promise<Metadata> {
+  const lang = await resolveLocale(params);
+  return { title: getDictionary(lang).meta.imprintTitle };
+}
 
-export default function ImprintPage() {
+// Rechtstext bleibt auf Deutsch (verbindlich); /en zeigt nur einen englischen Hinweis darüber.
+export default async function ImprintPage({ params }: PageProps<"/[lang]/impressum">) {
+  const lang = await resolveLocale(params);
   const { operator } = business;
   return (
-    <main className="wrap legal">
+    <main className="wrap legal" lang="de">
+      <LegalLanguageNotice lang={lang} title="imprintTitle" />
       <h1>Impressum</h1>
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>

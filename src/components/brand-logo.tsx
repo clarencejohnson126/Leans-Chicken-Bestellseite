@@ -4,6 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
+import { localePath, stripLocale, type Locale } from "@/i18n/config";
+
+type LogoLabels = {
+  homeLabel: string;
+  zoomLabel: string;
+  dialogLabel: string;
+  imageAlt: string;
+  closeHint: string;
+};
 
 // Auf der Startseite öffnet ein Klick aufs Badge eine große Ansicht, auf allen Unterseiten
 // führt das Logo zurück zur Startseite.
@@ -19,27 +28,28 @@ const wordmark = (
 );
 
 /** Logo als Link zur Startseite. Auch Platzhalter, solange der Pfad auf dynamischen Seiten noch lädt. */
-export function LogoLink() {
+export function LogoLink({ lang, labels }: { lang: Locale; labels: LogoLabels }) {
   return (
-    <Link href="/" className="brand" aria-label="Lean's Crispy Chicken – zur Startseite">
+    <Link href={localePath(lang, "/")} className="brand" aria-label={labels.homeLabel}>
       {badge}
       {wordmark}
     </Link>
   );
 }
 
-export function Logo() {
-  const isHome = usePathname() === "/";
+export function Logo({ lang, labels }: { lang: Locale; labels: LogoLabels }) {
+  // Mit oder ohne Sprachpräfix (Proxy-Rewrite) dieselbe Antwort, damit Server und Browser übereinstimmen.
+  const isHome = stripLocale(usePathname() ?? "/") === "/";
   const dialog = useRef<HTMLDialogElement>(null);
 
-  if (!isHome) return <LogoLink />;
+  if (!isHome) return <LogoLink lang={lang} labels={labels} />;
 
   return (
     <div className="brand">
       <button
         type="button"
         className="brand-zoom"
-        aria-label="Logo groß anzeigen"
+        aria-label={labels.zoomLabel}
         onClick={() => dialog.current?.showModal()}
       >
         {badge}
@@ -48,11 +58,11 @@ export function Logo() {
       <dialog
         ref={dialog}
         className="logo-lightbox"
-        aria-label="Lean's Logo"
+        aria-label={labels.dialogLabel}
         onClick={() => dialog.current?.close()}
       >
-        <Image src="/assets/brand/badge-512.webp" alt="Lean's Crispy Chicken Logo" width={512} height={512} />
-        <span className="logo-lightbox-hint">Zum Schließen tippen</span>
+        <Image src="/assets/brand/badge-512.webp" alt={labels.imageAlt} width={512} height={512} />
+        <span className="logo-lightbox-hint">{labels.closeHint}</span>
       </dialog>
     </div>
   );

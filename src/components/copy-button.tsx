@@ -3,7 +3,17 @@
 import { useState } from "react";
 
 /** Kopiert einen Text (z. B. Zahlungs- oder Verfolgungslink) in die Zwischenablage. */
-export function CopyButton({ text, label, className = "btn btn-ghost" }: { text: string; label: string; className?: string }) {
+export function CopyButton({
+  text,
+  label,
+  className = "btn btn-ghost",
+  copiedLabel = "Kopiert ✓",
+}: {
+  text: string;
+  label: string;
+  className?: string;
+  copiedLabel?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -15,7 +25,7 @@ export function CopyButton({ text, label, className = "btn btn-ghost" }: { text:
         setTimeout(() => setCopied(false), 2000);
       }}
     >
-      {copied ? "Kopiert ✓" : label}
+      {copied ? copiedLabel : label}
     </button>
   );
 }

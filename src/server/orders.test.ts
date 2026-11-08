@@ -88,6 +88,23 @@ function deps(store = memoryStore()): OrderDeps & { store: ReturnType<typeof mem
 }
 
 describe("createOrder", () => {
+  it("gibt die Sprache an den Checkout weiter (Standard Deutsch)", async () => {
+    const d = deps();
+    const spy = vi.spyOn(d.payments, "createCheckout");
+    await createOrder(request({ "crunch-combo": 2 }), "website", d, now, noop);
+    expect(spy.mock.calls[0][1]).toEqual({ lang: "de" });
+    const en = { ...request({ "crunch-combo": 2 }), lang: "en" as const };
+    await createOrder(en, "website", d, now, noop);
+    expect(spy.mock.calls[1][1]).toEqual({ lang: "en" });
+  });
+
+  it("antwortet bei englischen Bestellungen auf Englisch", async () => {
+    const en = { ...request({ basic: 1, ketchup: 1 }), lang: "en" as const };
+    const result = await createOrder(en, "website", deps(), now, noop);
+    expect(result).toMatchObject({ ok: false, code: "below_minimum" });
+    expect(!result.ok && result.message).toBe("The minimum order for delivery is €14.00. Pickup works without a minimum.");
+  });
+
   it("legt eine Bestellung an und gibt die Checkout-URL zurück", async () => {
     const d = deps();
     const result = await createOrder(request({ "crunch-combo": 2 }), "website", d, now, noop);

@@ -2007,3 +2007,99 @@ h3 {
   display: grid;
   gap: 4px;
 }
+
+/* Sprachumschalter DE | EN oben rechts im Header, neben "Bestellen" */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.lang-switch-item {
+  display: inline-flex;
+  align-items: center;
+}
+.lang-switch-sep {
+  color: var(--line);
+  padding-inline: 2px;
+}
+.lang-switch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 4px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+a.lang-switch-link:hover {
+  color: var(--cream);
+}
+a.lang-switch-link:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 1px;
+}
+.lang-switch-link[aria-current="true"] {
+  color: var(--cream);
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+/* Schmale Handys: DE/EN übereinander, damit Logo, Testlauf-Badge und Button in eine Zeile passen. */
+@media (max-width: 420px) {
+  .header-inner {
+    gap: 8px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .lang-switch {
+    flex-direction: column;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .lang-switch-sep {
+    display: none;
+  }
+  .lang-switch-link {
+    min-width: 28px;
+    min-height: 24px;
+  }
+  .lang-switch-link[aria-current="true"] {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+  }
+  .header .btn {
+    padding: 0 10px;
+  }
+  .pilot-badge span {
+    font-size: 10.5px;
+  }
+}
+
+/* Hinweis auf /en über den deutschen Rechtstexten */
+.legal-lang-notice {
+  border-left: 4px solid var(--red);
+  background: var(--panel);
+  padding: 14px 18px;
+  margin-bottom: 28px;
+}
+.legal-lang-notice strong {
+  display: block;
+  font: 22px/1.2 var(--font-display);
+  margin-bottom: 4px;
+}
+.legal-lang-notice p {
+  margin: 0;
+  color: var(--muted);
+}

@@ -1,5 +1,7 @@
 "use server";
 
+import { business } from "@/config/business";
+import { getDictionary, isLocale } from "@/i18n";
 import { parseSurvey } from "@/lib/survey";
 import { loadSurvey } from "@/server/integrations";
 import { log } from "@/server/log";
@@ -9,18 +11,20 @@ export type SurveyState = { ok: true } | { ok: false; error: string } | null;
 export async function submitSurveyAction(_prev: SurveyState, formData: FormData): Promise<SurveyState> {
   // Honeypot: Bots füllen das versteckte Feld aus, Menschen sehen es nicht.
   if (String(formData.get("website") ?? "")) return { ok: true };
+  const lang = formData.get("lang");
+  const t = getDictionary(isLocale(lang) ? lang : "de").surveyErrors;
   const response = parseSurvey(formData);
   if (!response)
     return {
       ok: false,
-      error: "Wähl mindestens eine Antwort aus oder schreib uns einen Tipp.",
+      error: t.empty,
     };
 
   const survey = loadSurvey();
   if (!survey)
     return {
       ok: false,
-      error: "Die Umfrage ist gerade nicht erreichbar. Schreib uns gern an hallo@leanchicken.de.",
+      error: t.unavailable(business.operator.email),
     };
   try {
     const { id } = await survey.store.saveSurveyResponse(response);
@@ -34,7 +38,7 @@ export async function submitSurveyAction(_prev: SurveyState, formData: FormData)
     log("survey_failed", { step: "save", error: String(error) });
     return {
       ok: false,
-      error: "Das hat nicht geklappt. Versuch es bitte gleich noch mal.",
+      error: t.failed,
     };
   }
 }

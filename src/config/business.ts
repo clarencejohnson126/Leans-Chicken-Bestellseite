@@ -1,5 +1,6 @@
-import { drinkRules, drinks, drinksEnabled, menus, sides } from "@/config/menu";
+import { drinkRules, drinks, drinksEnabled, itemText, menus, sides } from "@/config/menu";
 import { deliveryArea, schedule } from "@/config/schedule";
+import { localePath, type Locale } from "@/i18n/config";
 import { formatEuro } from "@/lib/format";
 
 // Zentrale Betreiber- und Markendaten. Rechtstexte, Footer und Checkout lesen nur von hier.
@@ -61,18 +62,52 @@ export const pilot = {
   endLabel: "17. Dezember",
   endShort: "17.12.",
   surveyPath: "/umfrage",
+  // Englische Datumsangaben für /en
+  en: {
+    startLabel: "16 November",
+    startShort: "16 Nov",
+    endLabel: "17 December",
+    endShort: "17 Dec",
+  },
 } as const;
 
+/** Datumsangaben des Testlaufs in der gewünschten Sprache. */
+export function pilotDates(lang: Locale) {
+  const { startLabel, startShort, endLabel, endShort } = lang === "en" ? pilot.en : pilot;
+  return { startLabel, startShort, endLabel, endShort };
+}
+
 const weekdayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const weekdayNamesEn = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /**
  * Vorausgefüllte Bestellnachricht für den WhatsApp-Button: Menü mit Preisen zum Ausfüllen, damit der
  * Kunde nicht zwischen Website und Chat wechseln muss. Preise und Zeiten kommen aus menu/schedule.
  * Bewusst ohne Emojis: Die Weiterleitung von wa.me auf WhatsApp Web zerlegt sie teils zu "�".
  */
-export function whatsappOrderTemplate() {
-  const days = schedule.deliveryWeekdays.map((d) => weekdayNames[d - 1]).join("/");
+export function whatsappOrderTemplate(lang: Locale = "de") {
   const hours = `${schedule.windows[0].start}–${schedule.windows.at(-1)!.end}`;
+  const area = `${deliveryArea.postalCodes.join("/")} ${deliveryArea.label.split(",")[0]}`;
+  if (lang === "en") {
+    const days = schedule.deliveryWeekdays.map((d) => weekdayNamesEn[d - 1]).join("/");
+    return [
+      "Hi Lean's, I'd like to order:",
+      "",
+      ...menus.map((m) => `${m.name} (${formatEuro(m.priceCents, "en")}): `),
+      `Extras – ${sides.map((s) => `${itemText(s, "en").name} ${formatEuro(s.priceCents, "en")}`).join(", ")}: `,
+      ...(drinksEnabled()
+        ? [
+            `Drinks – ${drinkRules.brand} ${drinks.map((d) => itemText(d, "en").name).join(" / ")}, ${formatEuro(drinks[0].priceCents + drinks[0].depositCents, "en")} each incl. deposit: `,
+          ]
+        : []),
+      "",
+      `Delivery or pickup (${pickupLocation.street}): `,
+      `Delivery day + time (${days}, ${hours}): `,
+      "Name: ",
+      `Address, delivery only (${area}): `,
+    ].join("\n");
+  }
+  const days = schedule.deliveryWeekdays.map((d) => weekdayNames[d - 1]).join("/");
   return [
     "Hi Lean's, ich möchte bestellen:",
     "",
@@ -87,22 +122,30 @@ export function whatsappOrderTemplate() {
     `Lieferung oder Abholung (${pickupLocation.street}): `,
     `Liefertag + Uhrzeit (${days}, ${hours} Uhr): `,
     "Name: ",
-    `Adresse, nur bei Lieferung (${deliveryArea.postalCodes.join("/")} ${deliveryArea.label.split(",")[0]}): `,
+    `Adresse, nur bei Lieferung (${area}): `,
   ].join("\n");
 }
 
-export function whatsappLink(text: string = whatsappOrderTemplate()) {
+export function whatsappLink(text?: string, lang: Locale = "de") {
   if (!business.whatsapp.number) return null;
-  return `https://wa.me/${business.whatsapp.number}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${business.whatsapp.number}?text=${encodeURIComponent(text ?? whatsappOrderTemplate(lang))}`;
 }
 
 export const taxNote = business.smallBusiness
   ? "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet."
   : "Alle Preise inkl. MwSt.";
 
+/** Steuerhinweis in der gewünschten Sprache. Rechtlich maßgeblich ist der deutsche Text. */
+export function taxNoteFor(lang: Locale) {
+  if (lang === "de") return taxNote;
+  return business.smallBusiness
+    ? "No VAT is charged under § 19 UStG (German small business rule)."
+    : "All prices incl. VAT.";
+}
+
 /** Öffentlicher Link, unter dem der Kunde den Status seiner Bestellung verfolgt. */
-export function trackingUrl(token: string) {
-  return `${business.siteUrl}/bestellung/verfolgen/${token}`;
+export function trackingUrl(token: string, lang: Locale = "de") {
+  return `${business.siteUrl}${localePath(lang, `/bestellung/verfolgen/${token}`)}`;
 }
 
 /** WhatsApp-Chat mit einem Kunden (E.164-Nummer) und vorausgefüllter Nachricht. */

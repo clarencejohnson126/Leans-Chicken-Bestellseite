@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DrinkCard } from "@/components/drink-card";
+import { DrinkCard, type DrinkCardLabels } from "@/components/drink-card";
 import { MenuImage } from "@/components/menu-image";
-import { pickupLocation, pilot, whatsappLink } from "@/config/business";
-import { drinkRules, drinks, menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
+import { pickupLocation, pilot, pilotDates, whatsappLink } from "@/config/business";
+import { depositLabel, drinks, itemText, menus, orderRules, sides, type CatalogItem, type ItemId } from "@/config/menu";
 import { deliveryArea } from "@/config/schedule";
+import type { Dictionary } from "@/i18n/de";
+import { fill, localePath, type Locale } from "@/i18n/config";
 import { formatEuro, formatWindow } from "@/lib/format";
 import { priceCart, type FulfillmentType } from "@/lib/pricing";
-import { orderRequestSchema, type OrderRequestInput } from "@/lib/validation";
+import { orderRequestSchemaFor, type OrderRequestInput } from "@/lib/validation";
+
+type Labels = Dictionary["orderForm"];
 
 export type SlotOption = {
   id: string;
@@ -49,11 +53,20 @@ export function OrderForm({
   days,
   drinkStock = null,
   initialItems = {},
+  lang,
+  labels: t,
+  drinkLabels,
+  menuImageLabels,
 }: {
   days: DayOption[];
   drinkStock?: DrinkAvailability;
   initialItems?: Partial<Record<ItemId, number>>;
+  lang: Locale;
+  labels: Labels;
+  drinkLabels: DrinkCardLabels & { addToCart: string };
+  menuImageLabels: { zoom: string; close: string };
 }) {
+  const euro = (cents: number) => formatEuro(cents, lang);
   const firstOpenDay = days.find((d) => d.slots.some((s) => s.open && s.remainingStrips > 0));
   const [quantities, setQuantities] = useState<Partial<Record<ItemId, number>>>(initialItems);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("delivery");
@@ -106,11 +119,12 @@ export function OrderForm({
       customer,
       note,
       acceptTerms: acceptTerms as true,
+      lang,
     };
-    const parsed = orderRequestSchema.safeParse(payload);
+    const parsed = orderRequestSchemaFor(lang).safeParse(payload);
     if (!parsed.success) {
       setErrors(Object.fromEntries(parsed.error.issues.map((i) => [i.path.join("."), i.message])));
-      setNotice({ tone: "error", message: "Bitte prüfe die markierten Angaben." });
+      setNotice({ tone: "error", message: t.checkMarked });
       return;
     }
     setErrors({});
@@ -129,14 +143,14 @@ export function OrderForm({
       if (data.fields) setErrors(data.fields);
       setNotice({
         tone: res.status === 503 ? "info" : "error",
-        message: data.message ?? "Da ist etwas schiefgelaufen. Bitte versuch es nochmal.",
+        message: data.message ?? t.genericError,
         alternative: data.alternative,
         whatsapp: res.status === 503 || res.status >= 500,
       });
     } catch {
       setNotice({
         tone: "error",
-        message: "Keine Verbindung. Bitte prüfe dein Internet und versuch es nochmal.",
+        message: t.offline,
         whatsapp: true,
       });
     } finally {
@@ -150,7 +164,7 @@ export function OrderForm({
     setNotice(null);
   }
 
-  const wa = whatsappLink();
+  const wa = whatsappLink(undefined, lang);
   const canSubmit = cart.hasMenu && cart.meetsMinimum && slotId && !slotTooSmall && acceptTerms && !submitting;
 
   return (
@@ -159,77 +173,100 @@ export function OrderForm({
         <section className="card span" aria-labelledby="step-food">
           <div className="card-title">
             <span>1</span>
-            <h2 id="step-food">Dein Menü</h2>
+            <h2 id="step-food">{t.stepFood}</h2>
           </div>
           <div className="menu-grid">
-            {menus.map((item) => (
-              <div className="menu-card" key={item.id} data-selected={(quantities[item.id] ?? 0) > 0}>
-                <MenuImage
-                  src={item.image}
-                  alt={`${item.name}: ${item.description}`}
-                  sizes="(min-width: 960px) 520px, 90vw"
-                />
-                <div className="menu-card-body">
-                  <div>
-                    <h3>
-                      <span className="menu-no">{item.number}</span> {item.name}
-                    </h3>
-                    <p className="menu-desc">{item.description}</p>
-                    <p className="hint">{item.includes}</p>
-                  </div>
-                  <div className="menu-card-foot">
-                    <strong className="menu-price">{formatEuro(item.priceCents)}</strong>
-                    <Stepper item={item} qty={quantities[item.id] ?? 0} onChange={changeQuantity} />
+            {menus.map((item) => {
+              const text = itemText(item, lang);
+              return (
+                <div className="menu-card" key={item.id} data-selected={(quantities[item.id] ?? 0) > 0}>
+                  <MenuImage
+                    src={item.image}
+                    alt={`${text.name}: ${text.description}`}
+                    sizes="(min-width: 960px) 520px, 90vw"
+                    labels={menuImageLabels}
+                  />
+                  <div className="menu-card-body">
+                    <div>
+                      <h3>
+                        <span className="menu-no">{item.number}</span> {text.name}
+                      </h3>
+                      <p className="menu-desc">{text.description}</p>
+                      <p className="hint">{text.includes}</p>
+                    </div>
+                    <div className="menu-card-foot">
+                      <strong className="menu-price">{euro(item.priceCents)}</strong>
+                      <Stepper item={item} lang={lang} labels={t} qty={quantities[item.id] ?? 0} onChange={changeQuantity} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {drinkStock && cart.hasMenu && cart.bottles === 0 && (
             <div className="drink-upsell">
               <p>
-                <strong>Mach dein Menü komplett! 🥤</strong>
+                <strong>{t.upsell}</strong>
               </p>
               <div className="drink-upsell-actions">
                 {drinks
                   .filter((d) => (drinkStock[d.id] ?? 0) > 0)
                   .map((d) => (
                     <button type="button" key={d.id} className="btn btn-ghost" onClick={() => changeQuantity(d.id, 1)}>
-                      + {d.name}, {d.size} · {formatEuro(d.priceCents)}
+                      + {itemText(d, lang).name}, {itemText(d, lang).size} · {euro(d.priceCents)}
                     </button>
                   ))}
               </div>
-              <p className="hint">Optional. zzgl. {formatEuro(drinks[0].depositCents)} {drinkRules.depositLabel} je Flasche.</p>
+              <p className="hint">
+                {fill(t.upsellHint, { amount: euro(drinks[0].depositCents), label: depositLabel(lang) })}
+              </p>
             </div>
           )}
-          <h3 className="sides-title">Side Orders</h3>
-          {sides.map((item) => (
-            <div className="sauce-row" key={item.id}>
-              <div>
-                <strong>{item.name}</strong>
-                <div className="hint">
-                  {item.description} · {formatEuro(item.priceCents)}
+          <h3 className="sides-title">{t.sides}</h3>
+          {sides.map((item) => {
+            const text = itemText(item, lang);
+            return (
+              <div className="sauce-row" key={item.id}>
+                <div>
+                  <strong>{text.name}</strong>
+                  <div className="hint">
+                    {text.description} · {euro(item.priceCents)}
+                  </div>
                 </div>
+                <Stepper item={item} lang={lang} labels={t} qty={quantities[item.id] ?? 0} onChange={changeQuantity} />
               </div>
-              <Stepper item={item} qty={quantities[item.id] ?? 0} onChange={changeQuantity} />
-            </div>
-          ))}
+            );
+          })}
           {drinkStock && (
             <div className="drinks-block" id="drinks">
-              <h3 className="sides-title">Drinks &amp; Refreshments</h3>
-              <p className="hint">Crunch braucht Erfrischung.</p>
+              <h3 className="sides-title">{t.drinks}</h3>
+              <p className="hint">{t.drinksHint}</p>
               <div className="drink-grid">
                 {drinks.map((item) => {
                   const qty = quantities[item.id] ?? 0;
                   const soldOut = (drinkStock[item.id] ?? 0) <= 0;
                   return (
-                    <DrinkCard key={item.id} item={item} soldOut={soldOut} selected={qty > 0}>
+                    <DrinkCard
+                      key={item.id}
+                      item={item}
+                      lang={lang}
+                      labels={drinkLabels}
+                      soldOut={soldOut}
+                      selected={qty > 0}
+                    >
                       {soldOut ? null : qty === 0 ? (
                         <button type="button" className="btn btn-red drink-add" onClick={() => changeQuantity(item.id, 1)}>
-                          Zum Warenkorb hinzufügen
+                          {t.addToCart}
                         </button>
                       ) : (
-                        <Stepper item={item} qty={qty} max={maxFor(item.id)} onChange={changeQuantity} />
+                        <Stepper
+                          item={item}
+                          lang={lang}
+                          labels={t}
+                          qty={qty}
+                          max={maxFor(item.id)}
+                          onChange={changeQuantity}
+                        />
                       )}
                     </DrinkCard>
                   );
@@ -240,18 +277,18 @@ export function OrderForm({
           {errors.items && <p className="field-error">{errors.items}</p>}
           {cart.lines.length > 0 && !cart.hasMenu && (
             <p className="notice" style={{ marginTop: 14 }}>
-              Side Orders und Getränke gibt es nur zusammen mit mindestens einem Menü.
+              {t.sidesNeedMenu}
             </p>
           )}
           {cart.hasMenu && !cart.meetsMinimum && (
             <div className="notice" style={{ marginTop: 14 }}>
               <p>
-                Mindestbestellwert für die Lieferung {formatEuro(orderRules.minOrderCents)}. Noch{" "}
-                {formatEuro(cart.missingCents)} bis zur Lieferung{cart.depositCents > 0 && " (Pfand zählt nicht mit)"}, oder du holst ab, dann gibt es keinen
-                Mindestbestellwert.
+                {fill(t.minOrderBefore, { min: euro(orderRules.minOrderCents), missing: euro(cart.missingCents) })}
+                {cart.depositCents > 0 && t.minOrderDeposit}
+                {t.minOrderAfter}
               </p>
               <button type="button" className="btn btn-ghost" onClick={() => setFulfillment("pickup")}>
-                Lieber abholen
+                {t.preferPickup}
               </button>
             </div>
           )}
@@ -260,21 +297,21 @@ export function OrderForm({
         <section className="card span" aria-labelledby="step-time">
           <div className="card-title">
             <span>2</span>
-            <h2 id="step-time">Lieferung oder Abholung</h2>
+            <h2 id="step-time">{t.stepTime}</h2>
           </div>
-          <div className="day-tabs fulfillment-tabs" role="group" aria-label="Lieferung oder Abholung">
+          <div className="day-tabs fulfillment-tabs" role="group" aria-label={t.fulfillmentLabel}>
             <button type="button" className="day-tab" aria-pressed={!pickup} onClick={() => setFulfillment("delivery")}>
-              Lieferung
-              <small>gratis ab {formatEuro(orderRules.minOrderCents)}</small>
+              {t.delivery}
+              <small>{fill(t.deliveryFree, { amount: euro(orderRules.minOrderCents) })}</small>
             </button>
             <button type="button" className="day-tab" aria-pressed={pickup} onClick={() => setFulfillment("pickup")}>
-              Abholung
-              <small>ohne Mindestbestellwert</small>
+              {t.pickup}
+              <small>{t.pickupNoMin}</small>
             </button>
           </div>
           {pickup && (
             <p className="hint" style={{ marginBottom: 14 }}>
-              Abholen bei uns:{" "}
+              {t.pickupAt}{" "}
               <b>
                 {pickupLocation.street}, {pickupLocation.city}
               </b>
@@ -282,14 +319,16 @@ export function OrderForm({
           )}
           {days[0]?.date === pilot.startsOn && (
             <p className="hint" style={{ marginBottom: 14 }}>
-              Wir starten am <b>{pilot.startLabel}</b>. Du kannst jetzt schon vorbestellen.
+              {t.startNoticeBefore}
+              <b>{pilotDates(lang).startLabel}</b>
+              {t.startNoticeAfter}
             </p>
           )}
           {days.length === 0 ? (
-            <p className="hint">Aktuell sind keine Liefertage geplant.</p>
+            <p className="hint">{t.noDays}</p>
           ) : (
             <>
-              <div className="day-tabs" role="group" aria-label="Liefertag">
+              <div className="day-tabs" role="group" aria-label={t.dayLabel}>
                 {days.map((d) => {
                   const anyOpen = d.slots.some((s) => s.open && s.remainingStrips > 0);
                   return (
@@ -302,25 +341,25 @@ export function OrderForm({
                       onClick={() => setDay(d.date)}
                     >
                       {d.shortLabel}
-                      <small>{anyOpen ? "bestellbar" : "geschlossen"}</small>
+                      <small>{anyOpen ? t.dayOpen : t.dayClosed}</small>
                     </button>
                   );
                 })}
               </div>
               {selectedDay && (
-                <div className="slot-grid" role="group" aria-label={`Lieferfenster am ${selectedDay.label}`}>
+                <div className="slot-grid" role="group" aria-label={fill(t.slotsLabel, { day: selectedDay.label })}>
                   {selectedDay.slots.map((s) => {
                     const fits = s.remainingStrips >= Math.max(1, cart.strips);
                     const disabled = !s.open || !fits;
                     const status = !s.open
-                      ? "Bestellschluss"
+                      ? t.slotClosed
                       : s.remainingStrips === 0
-                        ? "ausgebucht"
+                        ? t.slotFull
                         : !fits
-                          ? "zu wenig frei für deine Menge"
+                          ? t.slotTooSmall
                           : s.remainingStrips <= 15
-                            ? "fast ausgebucht"
-                            : "verfügbar";
+                            ? t.slotAlmostFull
+                            : t.slotAvailable;
                     return (
                       <button
                         type="button"
@@ -333,7 +372,7 @@ export function OrderForm({
                           clearError("slotId");
                         }}
                       >
-                        {formatWindow(s.start, s.end)}
+                        {formatWindow(s.start, s.end, lang)}
                         <small>{status}</small>
                       </button>
                     );
@@ -343,11 +382,11 @@ export function OrderForm({
               {errors.slotId && <p className="field-error">{errors.slotId}</p>}
               {slotTooSmall && (
                 <p className="notice" style={{ marginTop: 14 }}>
-                  Für deine Menge ist in diesem Fenster nicht mehr genug frei. Bitte wähle eine andere Zeit.
+                  {t.slotTooSmallNotice}
                 </p>
               )}
               <p className="hint" style={{ marginTop: 14 }}>
-                Bestellschluss jeweils 60 Minuten vor Beginn des Zeitfensters.
+                {t.orderDeadline}
               </p>
             </>
           )}
@@ -356,14 +395,14 @@ export function OrderForm({
         <section className="card span" aria-labelledby="step-address">
           <div className="card-title">
             <span>3</span>
-            <h2 id="step-address">{pickup ? "Kontakt" : "Lieferadresse & Kontakt"}</h2>
+            <h2 id="step-address">{pickup ? t.stepContact : t.stepAddress}</h2>
           </div>
           <p className="hint">
             {pickup
-              ? `Du holst ab: ${pickupLocation.street}, ${pickupLocation.city}.`
-              : `Wir liefern nur auf ${deliveryArea.label}.`}
+              ? fill(t.pickupHint, { address: `${pickupLocation.street}, ${pickupLocation.city}` })
+              : fill(t.deliveryHint, { area: deliveryArea.label })}
           </p>
-          <Field label="Name" name="customer.name" errors={errors}>
+          <Field label={t.name} name="customer.name" errors={errors}>
             <input
               id="customer.name"
               autoComplete="name"
@@ -371,7 +410,7 @@ export function OrderForm({
               onChange={(e) => updateCustomer("name", e.target.value)}
             />
           </Field>
-          <Field label="Mobilnummer" hint="für Rückfragen zur Bestellung" name="customer.phone" errors={errors}>
+          <Field label={t.phone} hint={t.phoneHint} name="customer.phone" errors={errors}>
             <input
               id="customer.phone"
               type="tel"
@@ -385,7 +424,7 @@ export function OrderForm({
           {!pickup && (
             <>
               <div className="field-row">
-                <Field label="Straße und Hausnummer" name="customer.street" errors={errors}>
+                <Field label={t.street} name="customer.street" errors={errors}>
                   <input
                     id="customer.street"
                     autoComplete="street-address"
@@ -393,7 +432,7 @@ export function OrderForm({
                     onChange={(e) => updateCustomer("street", e.target.value)}
                   />
                 </Field>
-                <Field label="PLZ" name="customer.postalCode" errors={errors}>
+                <Field label={t.postalCode} name="customer.postalCode" errors={errors}>
                   <input
                     id="customer.postalCode"
                     inputMode="numeric"
@@ -405,7 +444,7 @@ export function OrderForm({
                 </Field>
               </div>
               <div className="field-row">
-                <Field label="Firma / Gebäude" hint="optional" name="customer.company" errors={errors}>
+                <Field label={t.company} hint={t.optional} name="customer.company" errors={errors}>
                   <input
                     id="customer.company"
                     autoComplete="organization"
@@ -413,7 +452,7 @@ export function OrderForm({
                     onChange={(e) => updateCustomer("company", e.target.value)}
                   />
                 </Field>
-                <Field label="Etage, Klingel" hint="optional" name="customer.addressNote" errors={errors}>
+                <Field label={t.addressNote} hint={t.optional} name="customer.addressNote" errors={errors}>
                   <input
                     id="customer.addressNote"
                     value={customer.addressNote}
@@ -423,7 +462,7 @@ export function OrderForm({
               </div>
             </>
           )}
-          <Field label="Anmerkung" hint="optional" name="note" errors={errors}>
+          <Field label={t.note} hint={t.optional} name="note" errors={errors}>
             <textarea id="note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
 
@@ -437,15 +476,15 @@ export function OrderForm({
               }}
             />
             <span>
-              Ich akzeptiere die{" "}
-              <Link href="/agb" target="_blank">
-                AGB
-              </Link>{" "}
-              und habe die{" "}
-              <Link href="/datenschutz" target="_blank">
-                Datenschutzerklärung
-              </Link>{" "}
-              gelesen. Bei frisch zubereiteten Speisen besteht kein Widerrufsrecht.
+              {t.termsBefore}
+              <Link href={localePath(lang, "/agb")} target="_blank">
+                {t.termsLink}
+              </Link>
+              {t.termsMiddle}
+              <Link href={localePath(lang, "/datenschutz")} target="_blank">
+                {t.privacyLink}
+              </Link>
+              {t.termsAfter}
             </span>
           </label>
           {errors.acceptTerms && <p className="field-error">{errors.acceptTerms}</p>}
@@ -459,12 +498,12 @@ export function OrderForm({
                   className="btn btn-red"
                   onClick={() => takeAlternative(notice.alternative!.id, notice.alternative!.date)}
                 >
-                  Nächste freie Zeit: {notice.alternative.start} Uhr übernehmen
+                  {fill(t.takeAlternative, { time: notice.alternative.start })}
                 </button>
               )}
               {notice.whatsapp && wa && (
                 <a href={wa} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">
-                  Über WhatsApp bestellen
+                  {t.whatsappOrder}
                 </a>
               )}
             </div>
@@ -475,16 +514,16 @@ export function OrderForm({
       <div className="summary-bar">
         <div className="wrap summary-inner">
           <div className="summary-total">
-            <strong>{formatEuro(cart.totalCents)}</strong>
+            <strong>{euro(cart.totalCents)}</strong>
             <span>
-              {cart.strips} Strips
-              {cart.bottles > 0 && ` · ${cart.bottles} ${cart.bottles === 1 ? "Getränk" : "Getränke"}`} ·{" "}
-              {pickup ? "Abholung" : "Lieferung gratis"}
-              {cart.depositCents > 0 && ` · inkl. ${formatEuro(cart.depositCents)} Pfand`}
+              {fill(t.strips, { count: cart.strips })}
+              {cart.bottles > 0 && ` · ${cart.bottles} ${cart.bottles === 1 ? t.drinkOne : t.drinkMany}`} ·{" "}
+              {pickup ? t.summaryPickup : t.summaryDelivery}
+              {cart.depositCents > 0 && ` · ${fill(t.summaryDeposit, { amount: euro(cart.depositCents) })}`}
             </span>
           </div>
           <button type="submit" className="btn btn-red" disabled={!canSubmit}>
-            {submitting ? "Einen Moment…" : "Zur Bezahlung"}
+            {submitting ? t.submitting : t.submit}
           </button>
         </div>
       </div>
@@ -494,22 +533,27 @@ export function OrderForm({
 
 function Stepper({
   item,
+  lang,
+  labels,
   qty,
   max = orderRules.maxQuantityPerItem,
   onChange,
 }: {
   item: CatalogItem;
+  lang: Locale;
+  labels: Pick<Labels, "remove" | "count" | "add">;
   qty: number;
   max?: number;
   onChange: (id: ItemId, delta: number) => void;
 }) {
   const id = item.id as ItemId;
+  const name = itemText(item, lang).name;
   return (
     <div className="stepper">
-      <button type="button" onClick={() => onChange(id, -1)} disabled={qty === 0} aria-label={`${item.name} entfernen`}>
+      <button type="button" onClick={() => onChange(id, -1)} disabled={qty === 0} aria-label={fill(labels.remove, { name })}>
         −
       </button>
-      <output aria-live="polite" aria-label={`Anzahl ${item.name}`}>
+      <output aria-live="polite" aria-label={fill(labels.count, { name })}>
         {qty}
       </output>
       <button
@@ -517,7 +561,7 @@ function Stepper({
         className="plus"
         onClick={() => onChange(id, 1)}
         disabled={qty >= max}
-        aria-label={`${item.name} hinzufügen`}
+        aria-label={fill(labels.add, { name })}
       >
         +
       </button>

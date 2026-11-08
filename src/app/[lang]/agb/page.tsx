@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { LegalLanguageNotice } from "@/components/legal-language-notice";
+import { getDictionary, resolveLocale } from "@/i18n";
 import { business, pickupLocation, taxNote } from "@/config/business";
 import { orderRules } from "@/config/menu";
 import { paymentMethodsText } from "@/config/payments";
 import { deliveryArea, schedule } from "@/config/schedule";
 import { formatEuro } from "@/lib/format";
 
-export const metadata: Metadata = { title: "AGB | Lean's Crispy Chicken" };
+export async function generateMetadata({ params }: PageProps<"/[lang]/agb">): Promise<Metadata> {
+  const lang = await resolveLocale(params);
+  return { title: getDictionary(lang).meta.termsTitle };
+}
 
-export default function TermsPage() {
+// Rechtstext bleibt auf Deutsch (verbindlich); /en zeigt nur einen englischen Hinweis darüber.
+export default async function TermsPage({ params }: PageProps<"/[lang]/agb">) {
+  const lang = await resolveLocale(params);
   return (
-    <main className="wrap legal">
+    <main className="wrap legal" lang="de">
+      <LegalLanguageNotice lang={lang} title="termsTitle" />
       <div className="draft-banner">Entwurf – vor Go-Live rechtlich prüfen lassen.</div>
       <h1>Allgemeine Geschäftsbedingungen</h1>
 

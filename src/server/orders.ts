@@ -1,5 +1,6 @@
-import { findItem } from "@/config/menu";
+import { findItem, itemText } from "@/config/menu";
 import { schedule } from "@/config/schedule";
+import { orderMessages } from "@/i18n/order-messages";
 import { formatEuro } from "@/lib/format";
 import { minOrderCents, priceCart } from "@/lib/pricing";
 import {
@@ -36,17 +37,19 @@ export async function createOrder(
   now: Date,
   log: Logger,
 ): Promise<CreateOrderResult> {
+  const lang = request.lang ?? "de";
+  const messages = orderMessages[lang];
   const slot = resolveSlot(request.slotId);
   if (!slot || !isWithinHorizon(slot, now)) {
     log("order_rejected", { reason: "invalid_slot", slotId: request.slotId });
-    return { ok: false, code: "invalid_slot", message: "Diese Lieferzeit gibt es nicht." };
+    return { ok: false, code: "invalid_slot", message: messages.invalidSlot };
   }
   if (!isSlotOpen(slot, now)) {
     log("order_rejected", { reason: "slot_closed", slotId: slot.id });
     return {
       ok: false,
       code: "slot_closed",
-      message: "Bestellschluss für diese Lieferzeit ist erreicht. Bitte wähle eine spätere Zeit.",
+      message: messages.slotClosed,
     };
   }
 
@@ -56,7 +59,7 @@ export async function createOrder(
     return {
       ok: false,
       code: "below_minimum",
-      message: `Der Mindestbestellwert für die Lieferung beträgt ${formatEuro(minOrderCents(request.fulfillment))}. Abholen geht auch ohne.`,
+      message: messages.belowMinimum(formatEuro(minOrderCents(request.fulfillment), lang)),
     };
   }
 
@@ -80,10 +83,11 @@ export async function createOrder(
 
   if (!created.ok && created.reason === "sold_out") {
     log("order_rejected", { reason: "sold_out", itemId: created.itemId });
+    const soldOutItem = findItem(created.itemId);
     return {
       ok: false,
       code: "sold_out",
-      message: `${findItem(created.itemId)?.name ?? "Dieses Getränk"} ist leider ausverkauft (oder nicht mehr in deiner Menge da). Bitte passe die Getränke an.`,
+      message: messages.soldOut(soldOutItem && itemText(soldOutItem, lang).name),
     };
   }
 
@@ -95,7 +99,7 @@ export async function createOrder(
     return {
       ok: false,
       code: "slot_full",
-      message: "Für diese Lieferzeit sind nicht mehr genug Chicken Strips frei.",
+      message: messages.slotFull,
       alternative: alternative
         ? { id: alternative.id, date: alternative.date, start: alternative.start, end: alternative.end }
         : undefined,
@@ -112,7 +116,8 @@ export async function createOrder(
   });
 
   try {
-    const checkout = await deps.payments.createCheckout(order);
+    // Sprache nur für Checkout und Rückleitung; gespeichert wird sie nicht (Mails bleiben deutsch).
+    const checkout = await deps.payments.createCheckout(order, { lang });
     await deps.store.attachCheckout(order.id, checkout);
     log("checkout_created", { orderId: order.id, sessionId: checkout.sessionId });
     return { ok: true, orderNumber: order.orderNumber, checkoutUrl: checkout.url };
@@ -122,7 +127,7 @@ export async function createOrder(
     return {
       ok: false,
       code: "checkout_failed",
-      message: "Die Bezahlseite konnte gerade nicht geöffnet werden. Bitte versuch es gleich nochmal.",
+      message: messages.checkoutFailed,
     };
   }
 }
