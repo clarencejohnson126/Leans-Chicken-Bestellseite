@@ -1838,6 +1838,26 @@ h3 {
 .footer-contact {
   color: var(--cream);
 }
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+  color: var(--cream);
+  font-weight: 700;
+}
+.footer-social svg {
+  color: var(--red);
+  flex: none;
+}
+.footer-social b {
+  color: var(--red);
+}
+.footer-social:hover b,
+.footer-social:focus-visible b {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .footer-contact a {
   font-weight: 700;
   text-decoration: underline;

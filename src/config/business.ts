@@ -26,6 +26,7 @@ export const business = {
     taxOffice: "Finanzamt Mannheim-Neckarstadt",
   },
   websiteBy: { name: "rebelzai.com", url: "https://rebelzai.com" },
+  instagram: { handle: "leanscrispychicken", url: "https://www.instagram.com/leanscrispychicken/" },
   // Kleinunternehmer nach § 19 UStG: keine Umsatzsteuer ausweisen.
   smallBusiness: true,
   whatsapp: {
