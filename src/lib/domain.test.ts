@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { priceCart } from "@/lib/pricing";
+import { schedule } from "@/config/schedule";
 import { isSlotOpen, listDeliveryDays, nextAvailableSlot, resolveSlot } from "@/lib/slots";
 import { localParts, localToInstant } from "@/lib/time";
 import { normalizePhone, orderRequestSchema } from "@/lib/validation";
@@ -42,7 +43,10 @@ describe("Lieferfenster", () => {
   });
 
   it("zieht reservierte Strips ab und findet das nächste freie Fenster", () => {
-    const days = listDeliveryDays(tuesdayEvening, { "2026-11-25_11:30": 100, "2026-11-25_12:00": 95 });
+    const days = listDeliveryDays(tuesdayEvening, {
+      "2026-11-25_11:30": schedule.maxStripsPerWindow,
+      "2026-11-25_12:00": schedule.maxStripsPerWindow - 5,
+    });
     const first = days[0].slots;
     expect(first[0].available).toBe(false);
     expect(first[1].remainingStrips).toBe(5);

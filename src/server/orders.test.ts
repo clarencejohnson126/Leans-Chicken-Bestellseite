@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { schedule } from "@/config/schedule";
 import { orderRequestSchema } from "@/lib/validation";
 import { createOrder } from "@/server/orders";
 import type { OrderDeps, OrderStore, PendingOrderInput, StoredOrder } from "@/server/ports";
@@ -87,6 +88,9 @@ function deps(store = memoryStore()): OrderDeps & { store: ReturnType<typeof mem
   };
 }
 
+// So viele Family Packs (10 Strips), dass im Fenster nur noch 10 Strips frei sind
+const nearlyFull = schedule.maxStripsPerWindow / 10 - 1;
+
 describe("createOrder", () => {
   it("gibt die Sprache an den Checkout weiter (Standard Deutsch)", async () => {
     const d = deps();
@@ -148,7 +152,7 @@ describe("createOrder", () => {
 
   it("verhindert Überbuchung und schlägt das nächste freie Fenster vor", async () => {
     const d = deps();
-    await createOrder(request({ "family-pack": 9 }), "website", d, now, noop); // 90 von 100 Strips
+    await createOrder(request({ "family-pack": nearlyFull }), "website", d, now, noop); // Fenster bis auf 10 Strips voll
     const result = await createOrder(request({ "big-boy-box": 2 }), "website", d, now, noop); // +20
     expect(result).toMatchObject({
       ok: false,
@@ -159,7 +163,7 @@ describe("createOrder", () => {
 
   it("beendet abgelaufene Checkouts, bevor ein Platz neu vergeben wird", async () => {
     const d = deps();
-    await createOrder(request({ "family-pack": 9 }), "website", d, now, noop); // 90 von 100, unbezahlt
+    await createOrder(request({ "family-pack": nearlyFull }), "website", d, now, noop); // fast voll, unbezahlt
     const later = new Date(now.getTime() + 16 * 60_000); // Reservierung (15 Min.) ist abgelaufen
     const result = await createOrder(request({ "big-boy-box": 2 }), "website", d, later, noop);
     expect(result).toMatchObject({ ok: true });
