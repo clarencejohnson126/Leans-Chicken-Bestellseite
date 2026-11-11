@@ -182,6 +182,22 @@ export const de = {
       ctaText: "4 kurze Fragen, 30 Sekunden, anonym.",
       ctaButton: "Zur Umfrage →",
     },
+    flavors: {
+      eyebrow: "Nach dem Testlauf",
+      titleBefore: "Immer nur Original? ",
+      titleBrush: "Nicht lange.",
+      lead: "Im Testlauf gibt's bewusst nur ein Rezept: unser Original Cornflake Crunch. Läuft der Testlauf gut, kommen neue Sorten dazu. Die Rezepte stehen schon:",
+      list: [
+        { name: "Garden Herb Crunch", text: "mit frischen Gartenkräutern" },
+        { name: "Parmesan Pepper Crunch", text: "Parmesan und schwarzer Pfeffer" },
+        { name: "BBQ Smoky Crunch", text: "rauchig, mit BBQ-Rub" },
+        { name: "Hot Nashville Style", text: "für alle, die's scharf mögen" },
+      ],
+      wishBefore: "Welche Sorte willst du zuerst? Sag's uns in der ",
+      wishLink: "Umfrage",
+      wishAfter: ".",
+      imageAlt: "Fünf Sorten Chicken Strips: Original Cornflake, Garden Herb, Hot Nashville, Parmesan Pepper und BBQ Smoky",
+    },
     problem: {
       eyebrow: "Mittagspause auf FRANKLIN",
       titleBefore: "Schluss mit ",
@@ -277,13 +293,16 @@ export const de = {
       costQ: "Was kostet die Lieferung?",
       costA: (minOrder: string, taxNote: string) =>
         `Nichts. Ab ${minOrder} Bestellwert liefern wir ohne Liefergebühr. ${taxNote}`,
+      friesQ: "Bleiben die Pommes knusprig?",
+      friesA:
+        "Wir tun alles dafür: frisch frittiert, sofort verpackt und auf kurzem Weg zu dir. Ehrlich gesagt verlieren Pommes unterwegs aber etwas Crunch. Das ist Physik, und daran knabbert jede Lieferküche. Deine Pommes kommen warm bei dir an, den vollen Crisp können wir aber nicht garantieren. Anders beim Chicken: Die Cornflakes-Panade bleibt knusprig.",
       phoneQ: "Kann ich auch telefonisch bestellen?",
       phoneABefore: "Ja. Ruf uns an unter ",
       phoneAAfter:
         " oder schreib auf WhatsApp. Wir nehmen deine Bestellung auf und schicken dir einen persönlichen Bezahllink aufs Handy.",
       payQ: "Wie kann ich bezahlen?",
       payA: (methods: string) =>
-        `Online über Stripe mit ${methods}. Deine Sparkassen- oder Bankkarte funktioniert, wenn sie ein Visa- oder Mastercard-Logo hat; sonst wähl einfach SEPA-Lastschrift mit deiner IBAN. Bestellst du über WhatsApp, schicken wir dir einen persönlichen Bezahllink.`,
+        `Online über Stripe mit ${methods}. Deine Sparkassen- oder Bankkarte funktioniert, wenn sie ein Visa- oder Mastercard-Logo hat. Ohne Karte zahlst du mit Klarna direkt per Online-Banking („Sofort bezahlen“). Bestellst du über WhatsApp, schicken wir dir einen persönlichen Bezahllink.`,
       teamQ: "Kann ich fürs ganze Team bestellen?",
       teamA: (max: number) =>
         `Klar. Pack einfach mehrere Menüs in eine Bestellung – bis zu ${max} pro Menü. Für größere Mengen schreib uns vorher auf WhatsApp, dann planen wir die Fritteuse für dich ein.`,

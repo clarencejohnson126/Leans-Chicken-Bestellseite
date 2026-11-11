@@ -236,6 +236,39 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
         )}
       </section>
 
+      {/* 4b · Ausblick: neue Sorten nach dem Testlauf */}
+      <section className="wrap section flavors">
+        <figure className="flavors-image">
+          <Image
+            src="/assets/photos/flavors-2026-11.webp"
+            alt={t.flavors.imageAlt}
+            width={941}
+            height={666}
+            sizes="(min-width: 860px) 560px, 100vw"
+          />
+        </figure>
+        <div>
+          <p className="eyebrow">{t.flavors.eyebrow}</p>
+          <h2>
+            {t.flavors.titleBefore}
+            <span className="brush">{t.flavors.titleBrush}</span>
+          </h2>
+          <p className="lead section-lead">{t.flavors.lead}</p>
+          <ul className="flavors-list">
+            {t.flavors.list.map((f) => (
+              <li key={f.name}>
+                <strong>{f.name}</strong> <span>{f.text}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">
+            {t.flavors.wishBefore}
+            <Link href={href(pilot.surveyPath)}>{t.flavors.wishLink}</Link>
+            {t.flavors.wishAfter}
+          </p>
+        </div>
+      </section>
+
       {/* 5 · Social Proof */}
       <section className="proof">
         <div className="wrap section">
@@ -398,6 +431,10 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           <details>
             <summary>{t.faq.costQ}</summary>
             <p>{t.faq.costA(minOrder, taxNote)}</p>
+          </details>
+          <details>
+            <summary>{t.faq.friesQ}</summary>
+            <p>{t.faq.friesA}</p>
           </details>
           <details>
             <summary>{t.faq.phoneQ}</summary>

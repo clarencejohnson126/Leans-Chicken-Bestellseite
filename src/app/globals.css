@@ -1591,6 +1591,43 @@ h3 {
   }
 }
 
+/* Ausblick: neue Sorten */
+.flavors {
+  display: grid;
+  gap: 32px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+.flavors-image {
+  margin: 0;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.flavors-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.flavors-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  display: grid;
+  gap: 10px;
+}
+.flavors-list li {
+  padding-left: 18px;
+  border-left: 3px solid var(--red);
+}
+.flavors-list span {
+  color: var(--muted);
+}
+@media (min-width: 860px) {
+  .flavors {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* Umfrage */
 .survey-page {
   padding-block: 48px 120px;

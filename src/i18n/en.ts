@@ -180,6 +180,22 @@ export const en: Dictionary = {
       ctaText: "4 quick questions, 30 seconds, anonymous.",
       ctaButton: "Take the survey →",
     },
+    flavors: {
+      eyebrow: "After the trial run",
+      titleBefore: "Always the original? ",
+      titleBrush: "Not for long.",
+      lead: "During the trial run we deliberately serve just one recipe: our Original Cornflake Crunch. If the trial goes well, new flavours will follow. The recipes are ready:",
+      list: [
+        { name: "Garden Herb Crunch", text: "with fresh garden herbs" },
+        { name: "Parmesan Pepper Crunch", text: "parmesan and black pepper" },
+        { name: "BBQ Smoky Crunch", text: "smoky, with a BBQ rub" },
+        { name: "Hot Nashville Style", text: "for everyone who likes it hot" },
+      ],
+      wishBefore: "Which flavour do you want first? Tell us in the ",
+      wishLink: "survey",
+      wishAfter: ".",
+      imageAlt: "Five flavours of chicken strips: Original Cornflake, Garden Herb, Hot Nashville, Parmesan Pepper and BBQ Smoky",
+    },
     problem: {
       eyebrow: "Lunch break on FRANKLIN",
       titleBefore: "No more ",
@@ -275,13 +291,16 @@ export const en: Dictionary = {
       costQ: "How much is delivery?",
       costA: (minOrder: string, taxNote: string) =>
         `Nothing. For orders from ${minOrder} we deliver with no delivery fee. ${taxNote}`,
+      friesQ: "Do the fries stay crispy?",
+      friesA:
+        "We do everything we can: freshly fried, packed straight away and a short trip to you. To be honest, though, fries lose some crunch on the way. That's physics, and every delivery kitchen struggles with it. Your fries arrive warm, but we can't guarantee the full crisp. The chicken is different: the cornflake coating stays crispy.",
       phoneQ: "Can I order by phone?",
       phoneABefore: "Yes. Call us on ",
       phoneAAfter:
         " or message us on WhatsApp. We'll take your order and send a personal payment link to your phone.",
       payQ: "How can I pay?",
       payA: (methods: string) =>
-        `Online via Stripe with ${methods}. Your bank card works if it has a Visa or Mastercard logo; otherwise just choose SEPA Direct Debit with your IBAN. If you order via WhatsApp, we'll send you a personal payment link.`,
+        `Online via Stripe with ${methods}. Your bank card works if it has a Visa or Mastercard logo. Without a card, pay with Klarna straight from your online banking ("Pay now"). If you order via WhatsApp, we'll send you a personal payment link.`,
       teamQ: "Can I order for the whole team?",
       teamA: (max: number) =>
         `Sure. Just add several meals to one order – up to ${max} per meal. For larger orders, message us on WhatsApp beforehand and we'll plan the fryer for you.`,

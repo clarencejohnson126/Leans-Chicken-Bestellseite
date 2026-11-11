@@ -1,11 +1,13 @@
 // Zahlungsarten im Stripe Checkout. Apple Pay und Google Pay laufen über "card".
 // Debitkarten mit Visa-/Mastercard-Logo (z. B. neue Sparkassenkarten) zählen als Karte.
-// Reine girocard funktioniert online nicht – dafür gibt es SEPA-Lastschrift.
+// Reine girocard funktioniert online nicht – dafür gibt es Klarna ("Sofort bezahlen" per Online-Banking).
+// Welche Zahlungsarten im Checkout erscheinen, steuert die Payment Method Configuration in Stripe;
+// diese Labels sind nur der Text für Website und AGB.
 
 export const payments = {
   stripeMethods: ["card", "sepa_debit"] as const,
-  labels: ["Kredit- oder Debitkarte", "Apple Pay", "Google Pay", "SEPA-Lastschrift"],
-  labelsEn: ["credit or debit card", "Apple Pay", "Google Pay", "SEPA Direct Debit"],
+  labels: ["Kredit- oder Debitkarte", "Apple Pay", "Google Pay", "Klarna"],
+  labelsEn: ["credit or debit card", "Apple Pay", "Google Pay", "Klarna"],
   // SEPA bestätigt erst nach einigen Tagen. Für den Pilot werden SEPA-Bestellungen im Status
   // "processing" trotzdem zubereitet und geliefert; geplatzte Lastschriften lösen eine Meldung aus.
   sepa: {
