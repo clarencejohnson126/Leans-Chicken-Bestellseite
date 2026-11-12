@@ -43,7 +43,7 @@ export default async function TermsPage({ params }: PageProps<"/[lang]/agb">) {
       <h2>4. Lieferung</h2>
       <p>
         Wir liefern ausschließlich nach {deliveryArea.label} im gewählten Lieferfenster. Bestellungen
-        sind bis {schedule.orderLeadMinutes} Minuten vor Beginn des Lieferfensters möglich. Bitte sei
+        sind am Liefertag bis {schedule.orderCutoff} Uhr möglich. Bitte sei
         im Lieferfenster unter der angegebenen Adresse und Mobilnummer erreichbar.
       </p>
       <p>

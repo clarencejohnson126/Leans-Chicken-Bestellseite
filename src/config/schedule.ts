@@ -13,8 +13,9 @@ export const schedule = {
   ],
   // Produktionsgrenze pro Lieferfenster in Chicken Strips (Fritteusen-Kapazität).
   maxStripsPerWindow: 50,
-  // Bestellschluss: so viele Minuten vor Beginn des Lieferfensters.
-  orderLeadMinutes: 60,
+  // Bestellschluss: fester Zeitpunkt am Liefertag, gilt für alle Fenster. Danach bleibt eine halbe
+  // Stunde Vorbereitung bis zum ersten Fenster.
+  orderCutoff: "11:00",
   // Erster Liefertag des Testlaufs. Davor ist nichts buchbar; vorbestellen geht schon vorher,
   // der Buchungshorizont zählt dann ab diesem Tag.
   firstDeliveryDate: "2026-11-16",

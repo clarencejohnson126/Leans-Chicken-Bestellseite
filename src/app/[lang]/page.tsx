@@ -399,7 +399,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
         <div className="wrap">
           <p className="eyebrow light">{t.finalCta.eyebrow}</p>
           <h2>{t.finalCta.title}</h2>
-          <p className="lead">{t.finalCta.lead(schedule.orderLeadMinutes)}</p>
+          <p className="lead">{t.finalCta.lead(schedule.orderCutoff)}</p>
           <div className="hero-actions">
             <Link href={href("/bestellen")} className="btn btn-light">
               {t.finalCta.button}
@@ -425,7 +425,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           <details>
             <summary>{t.faq.whenQ}</summary>
             <p>
-              {t.faq.whenA(dates.startLabel, deliveryDays, deliveryHours, schedule.orderLeadMinutes, schedule.daysAhead)}
+              {t.faq.whenA(dates.startLabel, deliveryDays, deliveryHours, schedule.orderCutoff, schedule.daysAhead)}
             </p>
           </details>
           <details>

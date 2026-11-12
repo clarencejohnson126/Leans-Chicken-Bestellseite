@@ -136,7 +136,7 @@ export const de = {
     useCases: [
       {
         title: "Mittagspause im Büro",
-        text: "Bis 60 Minuten vorher bestellen, pünktlich zur Pause an der Tür. Die Crunch Combo macht satt, ohne dich lahmzulegen.",
+        text: "Bis 11 Uhr bestellen, pünktlich zur Pause an der Tür. Die Crunch Combo macht satt, ohne dich lahmzulegen.",
         pick: "crunch-combo",
       },
       {
@@ -274,8 +274,8 @@ export const de = {
     finalCta: {
       eyebrow: "Begrenzte Menge pro Zeitfenster",
       title: "Dein Lunch-Slot wartet.",
-      lead: (lead: number) =>
-        `Wir braten pro 30-Minuten-Fenster nur so viel, wie wir frisch schaffen. Wenn ein Fenster voll ist, ist es voll. Bestellschluss jeweils ${lead} Minuten vorher.`,
+      lead: (cutoff: string) =>
+        `Wir braten pro 30-Minuten-Fenster nur so viel, wie wir frisch schaffen. Wenn ein Fenster voll ist, ist es voll. Bestellschluss ist am Liefertag um ${cutoff} Uhr.`,
       button: "Jetzt Zeitfenster sichern →",
     },
     faq: {
@@ -288,8 +288,8 @@ export const de = {
       pickupA: (street: string, city: string) =>
         `Ja. Wähl beim Bestellen „Abholung“ und hol dein Chicken in deinem Zeitfenster in der ${street}, ${city} ab. Bei Abholung gibt es keinen Mindestbestellwert, und wir schicken dir eine Mail, sobald alles bereitliegt.`,
       whenQ: "Wann liefert ihr und bis wann kann ich bestellen?",
-      whenA: (start: string, days: string, hours: string, lead: number, daysAhead: number) =>
-        `Los geht's am ${start}, dann ${days} zwischen ${hours} Uhr in 30-Minuten-Fenstern. Vorbestellen kannst du schon jetzt. Bestellen kannst du bis ${lead} Minuten vor Beginn deines Fensters und bis zu ${daysAhead} Tage im Voraus.`,
+      whenA: (start: string, days: string, hours: string, cutoff: string, daysAhead: number) =>
+        `Los geht's am ${start}, dann ${days} zwischen ${hours} Uhr in 30-Minuten-Fenstern. Vorbestellen kannst du schon jetzt. Bestellen kannst du am Liefertag bis ${cutoff} Uhr und bis zu ${daysAhead} Tage im Voraus.`,
       costQ: "Was kostet die Lieferung?",
       costA: (minOrder: string, taxNote: string) =>
         `Nichts. Ab ${minOrder} Bestellwert liefern wir ohne Liefergebühr. ${taxNote}`,
@@ -366,7 +366,7 @@ export const de = {
     slotAlmostFull: "fast ausgebucht",
     slotAvailable: "verfügbar",
     slotTooSmallNotice: "Für deine Menge ist in diesem Fenster nicht mehr genug frei. Bitte wähle eine andere Zeit.",
-    orderDeadline: "Bestellschluss jeweils 60 Minuten vor Beginn des Zeitfensters.",
+    orderDeadline: "Bestellschluss ist am Liefertag um 11:00 Uhr, für alle Zeitfenster.",
     stepContact: "Kontakt",
     stepAddress: "Lieferadresse & Kontakt",
     pickupHint: "Du holst ab: {address}.",

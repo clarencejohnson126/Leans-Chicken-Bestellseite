@@ -35,7 +35,7 @@ function buildSlot(date: string, window: { start: string; end: string }): Slot {
     start: window.start,
     end: window.end,
     startsAt,
-    cutoffAt: new Date(startsAt.getTime() - schedule.orderLeadMinutes * 60_000),
+    cutoffAt: localToInstant(date, schedule.orderCutoff),
   };
 }
 

@@ -145,7 +145,7 @@ describe("createOrder", () => {
   });
 
   it("lehnt Fenster nach Bestellschluss ab", async () => {
-    const late = new Date("2026-11-25T10:15:00Z"); // 11:15 Berlin, Schluss für 12:00 war 11:00
+    const late = new Date("2026-11-25T10:15:00Z"); // 11:15 Berlin, Bestellschluss war 11:00
     const result = await createOrder(request({ "family-pack": 2 }), "website", deps(), late, noop);
     expect(result).toMatchObject({ ok: false, code: "slot_closed" });
   });
