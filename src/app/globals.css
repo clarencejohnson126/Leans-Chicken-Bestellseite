@@ -1591,6 +1591,48 @@ h3 {
   }
 }
 
+/* Signature Sauce im Video */
+.sauce {
+  display: grid;
+  gap: 32px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+.sauce-video {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: #000;
+}
+.sauce-video video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+}
+.sauce-sound {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+@media (min-width: 860px) {
+  .sauce {
+    grid-template-columns: 360px 1fr;
+    gap: 56px;
+  }
+}
+
 /* Ausblick: neue Sorten */
 .flavors {
   display: grid;

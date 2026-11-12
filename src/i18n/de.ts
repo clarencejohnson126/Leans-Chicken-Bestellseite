@@ -182,6 +182,17 @@ export const de = {
       ctaText: "4 kurze Fragen, 30 Sekunden, anonym.",
       ctaButton: "Zur Umfrage →",
     },
+    sauce: {
+      eyebrow: "Signature Sauce",
+      titleBefore: "Pink, cremig, ",
+      titleBrush: "unverwechselbar.",
+      lead: "Lean's Worcestershire Sauce ist in jedem Menü schon dabei: würzig, cremig und wie gemacht für den Cornflake-Crunch. Das Rezept bleibt in der Familie.",
+      extra: (price: string) => `Mehr davon? Die Sauce gibt's als Extra-Dip für ${price}.`,
+      cta: "Jetzt bestellen →",
+      video: "Lean's Signature Sauce fließt auf einen Cornflake Chicken Strip",
+      soundOn: "Ton an",
+      soundOff: "Ton aus",
+    },
     flavors: {
       eyebrow: "Nach dem Testlauf",
       titleBefore: "Immer nur Original? ",

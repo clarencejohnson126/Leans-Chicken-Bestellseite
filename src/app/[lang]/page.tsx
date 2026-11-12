@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { CallButton } from "@/components/call-button";
 import { DrinkCard } from "@/components/drink-card";
 import { MenuImage } from "@/components/menu-image";
+import { SauceVideo } from "@/components/sauce-video";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { business, phoneHref, pickupLocation, pilot, pilotDates, taxNoteFor } from "@/config/business";
 import { allergens, drinks, drinksEnabled, itemText, menus, orderRules, sides, type CatalogItem } from "@/config/menu";
@@ -16,6 +17,7 @@ import { loadOrderDeps } from "@/server/integrations";
 
 const deliveryHours = `${schedule.windows[0].start}–${schedule.windows.at(-1)!.end}`;
 const featured = menus.find((m) => m.id === "crunch-combo")!;
+const extraSauce = sides.find((s) => s.id === "worcester")!;
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const lang = await resolveLocale(params);
@@ -234,6 +236,27 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
             </p>
           </div>
         )}
+      </section>
+
+      {/* 4a · Signature Sauce im Video */}
+      <section className="wrap section sauce">
+        <SauceVideo
+          src="/assets/video/signature-sauce.mp4"
+          poster="/assets/video/signature-sauce-poster.webp"
+          labels={{ video: t.sauce.video, soundOn: t.sauce.soundOn, soundOff: t.sauce.soundOff }}
+        />
+        <div>
+          <p className="eyebrow">{t.sauce.eyebrow}</p>
+          <h2>
+            {t.sauce.titleBefore}
+            <span className="brush">{t.sauce.titleBrush}</span>
+          </h2>
+          <p className="lead section-lead">{t.sauce.lead}</p>
+          <p className="hint">{t.sauce.extra(euro(extraSauce.priceCents))}</p>
+          <Link href={href("/bestellen")} className="btn btn-red" style={{ marginTop: 20 }}>
+            {t.sauce.cta}
+          </Link>
+        </div>
       </section>
 
       {/* 4b · Ausblick: neue Sorten nach dem Testlauf */}

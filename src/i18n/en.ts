@@ -180,6 +180,17 @@ export const en: Dictionary = {
       ctaText: "4 quick questions, 30 seconds, anonymous.",
       ctaButton: "Take the survey →",
     },
+    sauce: {
+      eyebrow: "Signature Sauce",
+      titleBefore: "Pink, creamy, ",
+      titleBrush: "one of a kind.",
+      lead: "Lean's Worcestershire Sauce comes with every menu: savoury, creamy and made for the cornflake crunch. The recipe stays in the family.",
+      extra: (price: string) => `Want more? Get the sauce as an extra dip for ${price}.`,
+      cta: "Order now →",
+      video: "Lean's Signature Sauce pouring onto a cornflake chicken strip",
+      soundOn: "Sound on",
+      soundOff: "Sound off",
+    },
     flavors: {
       eyebrow: "After the trial run",
       titleBefore: "Always the original? ",
