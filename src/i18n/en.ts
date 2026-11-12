@@ -134,7 +134,7 @@ export const en: Dictionary = {
     useCases: [
       {
         title: "Lunch break at the office",
-        text: "Order up to 60 minutes ahead, at your door right on time for your break. The Crunch Combo fills you up without slowing you down.",
+        text: "Order up to 30 minutes ahead, at your door right on time for your break. The Crunch Combo fills you up without slowing you down.",
         pick: "crunch-combo",
       },
       {
@@ -364,7 +364,7 @@ export const en: Dictionary = {
     slotAlmostFull: "almost fully booked",
     slotAvailable: "available",
     slotTooSmallNotice: "There's not enough left in this slot for your order. Please choose another time.",
-    orderDeadline: "Orders close 60 minutes before each slot starts.",
+    orderDeadline: "Orders close 30 minutes before each slot starts.",
     stepContact: "Contact",
     stepAddress: "Delivery address & contact",
     pickupHint: "You're picking up from: {address}.",

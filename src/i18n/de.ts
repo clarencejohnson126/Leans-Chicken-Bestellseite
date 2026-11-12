@@ -136,7 +136,7 @@ export const de = {
     useCases: [
       {
         title: "Mittagspause im Büro",
-        text: "Bis 60 Minuten vorher bestellen, pünktlich zur Pause an der Tür. Die Crunch Combo macht satt, ohne dich lahmzulegen.",
+        text: "Bis 30 Minuten vorher bestellen, pünktlich zur Pause an der Tür. Die Crunch Combo macht satt, ohne dich lahmzulegen.",
         pick: "crunch-combo",
       },
       {
@@ -366,7 +366,7 @@ export const de = {
     slotAlmostFull: "fast ausgebucht",
     slotAvailable: "verfügbar",
     slotTooSmallNotice: "Für deine Menge ist in diesem Fenster nicht mehr genug frei. Bitte wähle eine andere Zeit.",
-    orderDeadline: "Bestellschluss jeweils 60 Minuten vor Beginn des Zeitfensters.",
+    orderDeadline: "Bestellschluss jeweils 30 Minuten vor Beginn des Zeitfensters.",
     stepContact: "Kontakt",
     stepAddress: "Lieferadresse & Kontakt",
     pickupHint: "Du holst ab: {address}.",

@@ -50,7 +50,7 @@ export function resolveSlot(id: string): Slot | null {
 }
 
 export function isSlotOpen(slot: Slot, now: Date) {
-  return now.getTime() < slot.cutoffAt.getTime();
+  return now.getTime() < slot.cutoffAt.getTime() + 60_000;
 }
 
 /** Erster buchbarer Kalendertag: heute, vor dem Start des Testlaufs aber der erste Liefertag. */

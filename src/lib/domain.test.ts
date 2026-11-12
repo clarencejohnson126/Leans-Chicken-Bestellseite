@@ -30,10 +30,13 @@ describe("Lieferfenster", () => {
     expect(days).toEqual(["2026-11-16", "2026-11-18", "2026-11-19", "2026-11-23"]);
   });
 
-  it("schließt ein Fenster 60 Minuten vor Beginn", () => {
-    const slot = resolveSlot("2026-11-25_11:30")!;
-    expect(isSlotOpen(slot, new Date("2026-11-25T09:29:00Z"))).toBe(true); // 10:29 Berlin
-    expect(isSlotOpen(slot, new Date("2026-11-25T09:30:00Z"))).toBe(false); // 10:30 Berlin
+  it("schließt ein Fenster 30 Minuten vor Beginn, die Minute selbst zählt noch", () => {
+    const at = (iso: string) => new Date(iso);
+    expect(isSlotOpen(resolveSlot("2026-11-25_12:30")!, at("2026-11-25T11:00:59Z"))).toBe(true); // 12:00 Berlin
+    expect(isSlotOpen(resolveSlot("2026-11-25_12:00")!, at("2026-11-25T11:00:00Z"))).toBe(false); // läuft gerade
+    expect(isSlotOpen(resolveSlot("2026-11-25_12:30")!, at("2026-11-25T11:01:00Z"))).toBe(false); // 12:01 Berlin
+    expect(isSlotOpen(resolveSlot("2026-11-25_13:30")!, at("2026-11-25T12:00:30Z"))).toBe(true); // 13:00 Berlin
+    expect(isSlotOpen(resolveSlot("2026-11-25_13:30")!, at("2026-11-25T12:45:00Z"))).toBe(false); // 13:45 Berlin
   });
 
   it("lehnt Tage ohne Lieferung und unbekannte Uhrzeiten ab", () => {
