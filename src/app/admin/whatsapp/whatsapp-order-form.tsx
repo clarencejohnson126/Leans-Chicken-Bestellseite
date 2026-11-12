@@ -20,7 +20,7 @@ function paymentMessage(firstName: string, orderNumber: string, total: string, u
     `Hi ${firstName}, danke für deine Bestellung bei ${business.name}!`,
     `Bestellung ${orderNumber} · ${total}`,
     ...(pickup ? [`Abholung: ${pickupLocation.street}, ${pickupLocation.city}`] : []),
-    `Hier kannst du bezahlen (Karte, Apple Pay, Google Pay oder SEPA): ${url}`,
+    `Hier kannst du bezahlen (Karte, Apple Pay, Google Pay oder Klarna): ${url}`,
     `Der Link ist ${schedule.whatsappHoldMinutes} Minuten gültig, so lange halten wir dir den Platz frei.`,
   ].join("\n");
 }
