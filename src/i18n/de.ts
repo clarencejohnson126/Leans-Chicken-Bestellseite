@@ -126,7 +126,7 @@ export const de = {
       },
       {
         title: "0 € Liefergebühr",
-        text: `Ab ${minOrder} Bestellwert. Kein Aufschlag, keine Servicegebühr, keine Überraschung.`,
+        text: `Bei Lieferung ab ${minOrder} Bestellwert, Abholen geht ohne Mindestbestellwert. Kein Aufschlag, keine Servicegebühr, keine Überraschung.`,
       },
       {
         title: "Aus FRANKLIN. Für FRANKLIN.",
@@ -159,9 +159,9 @@ export const de = {
       chipStart: "Start",
       chipFreeAmount: "0 €",
       chipFreeDelivery: "Liefergebühr",
-      chipMinOrder: "Mindestbestellwert",
-      chipPickupBefore: "Auch",
-      chipPickup: "zum Abholen",
+      chipMinOrder: "Lieferung ab",
+      chipPickupBefore: "Abholung",
+      chipPickup: "ohne Mindestwert",
       cta: "Jetzt vorbestellen →",
       trust: "Auf dem LOOPFEST ausverkauft · Familienprojekt aus FRANKLIN",
     },
@@ -171,7 +171,7 @@ export const de = {
       area: "Ganz FRANKLIN",
       postalCode: "PLZ",
       freeDelivery: "0 € Liefergebühr",
-      fromMinOrder: (amount: string) => `Ab ${amount} Bestellwert`,
+      fromMinOrder: (amount: string) => `Bei Lieferung ab ${amount} Bestellwert`,
     },
     pilot: {
       eyebrow: (label: string) => `${label} · Testlauf`,
@@ -218,7 +218,7 @@ export const de = {
       lead: "Vier Menüs, alle mit Signature Sauce. Gewürzt mit Himalaya-Salz, frittiert in Sonnenblumenöl. Kein Schnickschnack – nur Chicken, das knackt.",
       order: "Bestellen",
       sides: "Side Orders",
-      minOrder: (amount: string) => `Mindestbestellwert ${amount}`,
+      minOrder: (amount: string) => `Lieferung ab ${amount} Bestellwert, Abholung ohne Mindestbestellwert`,
       drinksEyebrow: "Drinks & Refreshments",
       drinksTitle: "Crunch braucht Erfrischung.",
       drinksHint: "Getränke gibt es zu jedem Menü dazu. Das Pfand bekommst du bei Rückgabe der Flasche zurück.",
@@ -292,7 +292,7 @@ export const de = {
         `Los geht's am ${start}, dann ${days} zwischen ${hours} Uhr in 30-Minuten-Fenstern. Vorbestellen kannst du schon jetzt. Bestellen kannst du am Liefertag bis ${cutoff} Uhr und bis zu ${daysAhead} Tage im Voraus.`,
       costQ: "Was kostet die Lieferung?",
       costA: (minOrder: string, taxNote: string) =>
-        `Nichts. Ab ${minOrder} Bestellwert liefern wir ohne Liefergebühr. ${taxNote}`,
+        `Nichts. Ab ${minOrder} Bestellwert liefern wir ohne Liefergebühr. Holst du selbst ab, gibt es keinen Mindestbestellwert, da reicht schon ein Menü. ${taxNote}`,
       friesQ: "Bleiben die Pommes knusprig?",
       friesA:
         "Wir tun alles dafür: frisch frittiert, sofort verpackt und auf kurzem Weg zu dir. Ehrlich gesagt verlieren Pommes unterwegs aber etwas Crunch. Das ist Physik, und daran knabbert jede Lieferküche. Deine Pommes kommen warm bei dir an, den vollen Crisp können wir aber nicht garantieren. Anders beim Chicken: Die Cornflakes-Panade bleibt knusprig.",

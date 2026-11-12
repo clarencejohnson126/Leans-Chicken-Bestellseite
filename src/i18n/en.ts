@@ -124,7 +124,7 @@ export const en: Dictionary = {
       },
       {
         title: "€0 delivery fee",
-        text: `For orders from ${minOrder}. No surcharge, no service fee, no surprises.`,
+        text: `For delivery orders from ${minOrder}; pickup has no minimum. No surcharge, no service fee, no surprises.`,
       },
       {
         title: "From FRANKLIN. For FRANKLIN.",
@@ -157,9 +157,9 @@ export const en: Dictionary = {
       chipStart: "Starts",
       chipFreeAmount: "€0",
       chipFreeDelivery: "delivery fee",
-      chipMinOrder: "Minimum order",
-      chipPickupBefore: "Also",
-      chipPickup: "for pickup",
+      chipMinOrder: "Delivery from",
+      chipPickupBefore: "Pickup",
+      chipPickup: "no minimum",
       cta: "Pre-order now →",
       trust: "Sold out at LOOPFEST · Family project from FRANKLIN",
     },
@@ -169,7 +169,7 @@ export const en: Dictionary = {
       area: "All of FRANKLIN",
       postalCode: "Postcode",
       freeDelivery: "€0 delivery fee",
-      fromMinOrder: (amount: string) => `For orders from ${amount}`,
+      fromMinOrder: (amount: string) => `For delivery orders from ${amount}`,
     },
     pilot: {
       eyebrow: (label: string) => `${label} · Trial run`,
@@ -216,7 +216,7 @@ export const en: Dictionary = {
       lead: "Four meals, all with Signature Sauce. Seasoned with Himalayan salt, fried in sunflower oil. No frills – just chicken that crunches.",
       order: "Order",
       sides: "Side Orders",
-      minOrder: (amount: string) => `Minimum order ${amount}`,
+      minOrder: (amount: string) => `Delivery from ${amount}, no minimum for pickup`,
       drinksEyebrow: "Drinks & Refreshments",
       drinksTitle: "Crunch needs refreshment.",
       drinksHint: "Drinks can be added to any meal. You get the deposit back when you return the bottle.",
@@ -290,7 +290,7 @@ export const en: Dictionary = {
         `We start on ${start}, then ${days}, ${hours}, in 30-minute slots. You can pre-order right now. You can order until ${cutoff} on the delivery day and up to ${daysAhead} days in advance.`,
       costQ: "How much is delivery?",
       costA: (minOrder: string, taxNote: string) =>
-        `Nothing. For orders from ${minOrder} we deliver with no delivery fee. ${taxNote}`,
+        `Nothing. For orders from ${minOrder} we deliver with no delivery fee. If you pick up yourself, there's no minimum – a single meal is enough. ${taxNote}`,
       friesQ: "Do the fries stay crispy?",
       friesA:
         "We do everything we can: freshly fried, packed straight away and a short trip to you. To be honest, though, fries lose some crunch on the way. That's physics, and every delivery kitchen struggles with it. Your fries arrive warm, but we can't guarantee the full crisp. The chicken is different: the cornflake coating stays crispy.",
