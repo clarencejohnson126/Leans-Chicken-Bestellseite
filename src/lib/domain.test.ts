@@ -162,7 +162,7 @@ describe("WhatsApp-Bestellvorlage", () => {
     expect(text).toContain("Basic (8,00 €): ");
     expect(text).toContain("Family Pack (18,00 €): ");
     expect(text).toContain("Worcestershire Sauce 1,50 €");
-    expect(text).toContain("Mo/Mi/Do, 11:30–14:00 Uhr");
+    expect(text).toContain("Mo/Mi/Do, 11:30–15:00 Uhr");
     expect(text).toContain("Adresse, nur bei Lieferung (68309 FRANKLIN): ");
     expect(text).toContain("Lieferung oder Abholung (George-Washington-Straße 219): ");
     expect(text).toContain("Getränke – Bad Brambacher Himbeere-Zitrone / Pink Grapefruit, je 3,50 € inkl. Pfand: ");

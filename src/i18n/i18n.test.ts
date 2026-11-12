@@ -76,7 +76,7 @@ describe("Sprachhelfer", () => {
     const text = whatsappOrderTemplate("en");
     expect(text).toContain("Hi Lean's, I'd like to order:");
     expect(text).toContain("Basic (€8.00): ");
-    expect(text).toContain("Mon/Wed/Thu, 11:30–14:00");
+    expect(text).toContain("Mon/Wed/Thu, 11:30–15:00");
   });
 });
 

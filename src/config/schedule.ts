@@ -10,6 +10,8 @@ export const schedule = {
     { start: "12:30", end: "13:00" },
     { start: "13:00", end: "13:30" },
     { start: "13:30", end: "14:00" },
+    { start: "14:00", end: "14:30" },
+    { start: "14:30", end: "15:00" },
   ],
   // Produktionsgrenze pro Lieferfenster in Chicken Strips (Fritteusen-Kapazität).
   maxStripsPerWindow: 100,
