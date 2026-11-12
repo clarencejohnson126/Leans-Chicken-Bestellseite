@@ -833,15 +833,6 @@ h3 {
 .legal a {
   text-decoration: underline;
 }
-.draft-banner {
-  border: 2px dashed var(--yellow);
-  padding: 12px 16px;
-  color: var(--yellow);
-  font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 28px;
-}
-
 /* Menükarten (Bestellformular und Startseite) */
 .menu-grid {
   display: grid;

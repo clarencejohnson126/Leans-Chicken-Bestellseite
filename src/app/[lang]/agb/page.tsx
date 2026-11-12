@@ -18,7 +18,6 @@ export default async function TermsPage({ params }: PageProps<"/[lang]/agb">) {
   return (
     <main className="wrap legal" lang="de">
       <LegalLanguageNotice lang={lang} title="termsTitle" />
-      <div className="draft-banner">Entwurf – vor Go-Live rechtlich prüfen lassen.</div>
       <h1>Allgemeine Geschäftsbedingungen</h1>
 
       <h2>1. Anbieter</h2>

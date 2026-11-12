@@ -15,9 +15,6 @@ export default async function PrivacyPage({ params }: PageProps<"/[lang]/datensc
   return (
     <main className="wrap legal" lang="de">
       <LegalLanguageNotice lang={lang} title="privacyTitle" />
-      <div className="draft-banner">
-        Entwurf – an die tatsächlich eingesetzten Dienste anpassen und rechtlich prüfen lassen.
-      </div>
       <h1>Datenschutzerklärung</h1>
 
       <h2>Verantwortlicher</h2>
