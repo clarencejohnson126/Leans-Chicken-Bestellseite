@@ -41,7 +41,7 @@ const de: OrderMessages = {
   notConfigured: "Die Online-Bezahlung wird gerade eingerichtet. Bestell gern solange per WhatsApp.",
   paused: "Online-Bestellungen sind gerade pausiert. Schreib uns gern auf WhatsApp.",
   invalidSlot: "Diese Lieferzeit gibt es nicht.",
-  slotClosed: "Bestellschluss für diesen Tag ist erreicht (11:00 Uhr). Bitte wähle einen anderen Liefertag.",
+  slotClosed: "Bestellschluss für diese Lieferzeit ist erreicht. Bitte wähle eine spätere Zeit.",
   belowMinimum: (amount) => `Der Mindestbestellwert für die Lieferung beträgt ${amount}. Abholen geht auch ohne.`,
   soldOut: (name) =>
     `${name ?? "Dieses Getränk"} ist leider ausverkauft (oder nicht mehr in deiner Menge da). Bitte passe die Getränke an.`,
@@ -65,7 +65,7 @@ const en: OrderMessages = {
   notConfigured: "Online payment is being set up right now. Feel free to order via WhatsApp in the meantime.",
   paused: "Online orders are paused right now. Just message us on WhatsApp.",
   invalidSlot: "This delivery time doesn't exist.",
-  slotClosed: "Orders for this day have closed (11:00). Please choose another delivery day.",
+  slotClosed: "Ordering for this time has closed. Please choose a later time.",
   belowMinimum: (amount) => `The minimum order for delivery is ${amount}. Pickup works without a minimum.`,
   soldOut: (name) =>
     `Sorry, ${name ?? "this drink"} is sold out (or not available in your quantity any more). Please adjust your drinks.`,

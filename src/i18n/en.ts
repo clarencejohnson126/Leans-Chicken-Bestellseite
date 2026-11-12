@@ -134,7 +134,7 @@ export const en: Dictionary = {
     useCases: [
       {
         title: "Lunch break at the office",
-        text: "Order by 11 am, at your door right on time for your break. The Crunch Combo fills you up without slowing you down.",
+        text: "Order up to 60 minutes ahead, at your door right on time for your break. The Crunch Combo fills you up without slowing you down.",
         pick: "crunch-combo",
       },
       {
@@ -272,8 +272,8 @@ export const en: Dictionary = {
     finalCta: {
       eyebrow: "Limited quantity per slot",
       title: "Your lunch slot is waiting.",
-      lead: (cutoff: string) =>
-        `In each 30-minute slot we only fry as much as we can make fresh. When a slot is full, it's full. Orders close at ${cutoff} on each delivery day.`,
+      lead: (lead: number) =>
+        `In each 30-minute slot we only fry as much as we can make fresh. When a slot is full, it's full. Orders close ${lead} minutes before each slot.`,
       button: "Book your slot now →",
     },
     faq: {
@@ -286,8 +286,8 @@ export const en: Dictionary = {
       pickupA: (street: string, city: string) =>
         `Yes. Choose “Pickup” when ordering and collect your chicken during your slot at ${street}, ${city}. There's no minimum order for pickup, and we'll email you as soon as everything is ready.`,
       whenQ: "When do you deliver and how late can I order?",
-      whenA: (start: string, days: string, hours: string, cutoff: string, daysAhead: number) =>
-        `We start on ${start}, then ${days}, ${hours}, in 30-minute slots. You can pre-order right now. You can order until ${cutoff} on the delivery day and up to ${daysAhead} days in advance.`,
+      whenA: (start: string, days: string, hours: string, lead: number, daysAhead: number) =>
+        `We start on ${start}, then ${days}, ${hours}, in 30-minute slots. You can pre-order right now. You can order up to ${lead} minutes before your slot starts and up to ${daysAhead} days in advance.`,
       costQ: "How much is delivery?",
       costA: (minOrder: string, taxNote: string) =>
         `Nothing. For orders from ${minOrder} we deliver with no delivery fee. If you pick up yourself, there's no minimum – a single meal is enough. ${taxNote}`,
@@ -364,7 +364,7 @@ export const en: Dictionary = {
     slotAlmostFull: "almost fully booked",
     slotAvailable: "available",
     slotTooSmallNotice: "There's not enough left in this slot for your order. Please choose another time.",
-    orderDeadline: "Orders close at 11:00 on the delivery day, for all slots.",
+    orderDeadline: "Orders close 60 minutes before each slot starts.",
     stepContact: "Contact",
     stepAddress: "Delivery address & contact",
     pickupHint: "You're picking up from: {address}.",
