@@ -7,7 +7,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { taxNoteFor } from "@/config/business";
 import { drinkIds, drinksEnabled, type ItemId } from "@/config/menu";
 import { getDictionary, resolveLocale, type Locale } from "@/i18n";
-import { listDeliveryDays } from "@/lib/slots";
+import { isPilotOver, listDeliveryDays } from "@/lib/slots";
 import { formatDay } from "@/lib/time";
 import { loadAdminStore, loadOrderDeps } from "@/server/integrations";
 
@@ -42,6 +42,16 @@ async function LiveOrderForm({
   await connection();
   const now = new Date();
   const dict = getDictionary(lang);
+  if (isPilotOver(now)) {
+    return (
+      <div className="notice" style={{ marginTop: 28 }}>
+        <p>
+          <strong>{dict.order.endedStrong}</strong>
+          {dict.order.endedText}
+        </p>
+      </div>
+    );
+  }
   if (await loadAdminStore()?.ordersPaused()) {
     return (
       <div className="notice" style={{ marginTop: 28 }}>

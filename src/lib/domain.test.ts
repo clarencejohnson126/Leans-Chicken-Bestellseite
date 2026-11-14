@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { priceCart } from "@/lib/pricing";
 import { schedule } from "@/config/schedule";
-import { isSlotOpen, listDeliveryDays, nextAvailableSlot, resolveSlot } from "@/lib/slots";
+import { isPilotOver, isSlotOpen, isWithinHorizon, listDeliveryDays, nextAvailableSlot, resolveSlot } from "@/lib/slots";
 import { localParts, localToInstant } from "@/lib/time";
 import { normalizePhone, orderRequestSchema } from "@/lib/validation";
 
@@ -28,6 +28,19 @@ describe("Lieferfenster", () => {
   it("bietet vor dem Start nur Tage ab dem ersten Liefertag an", () => {
     const days = listDeliveryDays(new Date("2026-10-31T10:00:00Z")).map((d) => d.date);
     expect(days).toEqual(["2026-11-16", "2026-11-18", "2026-11-19", "2026-11-23"]);
+  });
+
+  it("bietet nichts nach dem letzten Liefertag des Testlaufs an", () => {
+    const days = listDeliveryDays(new Date("2026-12-12T10:00:00Z")).map((d) => d.date);
+    expect(days).toEqual(["2026-12-14", "2026-12-16", "2026-12-17"]);
+    expect(isWithinHorizon(resolveSlot("2026-12-17_11:30")!, new Date("2026-12-12T10:00:00Z"))).toBe(true);
+    expect(isWithinHorizon(resolveSlot("2026-12-21_11:30")!, new Date("2026-12-16T10:00:00Z"))).toBe(false);
+    expect(listDeliveryDays(new Date("2026-12-18T10:00:00Z"))).toEqual([]);
+  });
+
+  it("meldet das Ende des Testlaufs erst ab dem Tag nach dem letzten Liefertag", () => {
+    expect(isPilotOver(new Date("2026-12-17T21:00:00Z"))).toBe(false); // 22:00 Berlin
+    expect(isPilotOver(new Date("2026-12-17T23:30:00Z"))).toBe(true); // 00:30 Berlin, 18.12.
   });
 
   it("schließt ein Fenster 30 Minuten vor Beginn, die Minute selbst zählt noch", () => {

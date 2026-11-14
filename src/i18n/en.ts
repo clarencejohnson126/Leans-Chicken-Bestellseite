@@ -337,6 +337,8 @@ export const en: Dictionary = {
     loading: "Loading delivery times …",
     pausedStrong: "Online orders are paused right now.",
     pausedText: " Message us on WhatsApp and we'll see what we can do.",
+    endedStrong: "Our trial run has ended.",
+    endedText: " Thanks to everyone who ordered! Orders aren't possible right now.",
   },
 
   orderForm: {

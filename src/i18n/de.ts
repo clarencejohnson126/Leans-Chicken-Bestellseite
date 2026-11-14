@@ -339,6 +339,8 @@ export const de = {
     loading: "Lieferzeiten werden geladen …",
     pausedStrong: "Online-Bestellungen sind gerade pausiert.",
     pausedText: " Schreib uns auf WhatsApp, dann schauen wir, was geht.",
+    endedStrong: "Testlauf beendet.",
+    endedText: " Danke an alle, die bestellt haben! Bestellungen sind gerade nicht möglich.",
   },
 
   orderForm: {

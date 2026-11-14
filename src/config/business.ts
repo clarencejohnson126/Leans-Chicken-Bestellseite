@@ -58,7 +58,7 @@ export const pilot = {
   startsOn: schedule.firstDeliveryDate,
   startLabel: "16. November",
   startShort: "16.11.",
-  endsOn: "2026-12-17",
+  endsOn: schedule.lastDeliveryDate,
   endLabel: "17. Dezember",
   endShort: "17.12.",
   surveyPath: "/umfrage",

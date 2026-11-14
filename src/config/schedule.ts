@@ -21,6 +21,8 @@ export const schedule = {
   // Erster Liefertag des Testlaufs. Davor ist nichts buchbar; vorbestellen geht schon vorher,
   // der Buchungshorizont zählt dann ab diesem Tag.
   firstDeliveryDate: "2026-11-16",
+  // Letzter Liefertag des Testlaufs. Danach ist nichts mehr buchbar, die Bestellseite meldet das Ende.
+  lastDeliveryDate: "2026-12-17",
   // Wie viele Kalendertage im Voraus bestellt werden kann.
   daysAhead: 7,
   // Unbezahlte Bestellungen halten Kapazität so lange. Stripe-Sessions laufen technisch mindestens
